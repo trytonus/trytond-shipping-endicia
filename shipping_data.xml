@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tryton>
+    <data noupdate="1">
+    
+        <record id="carrier_usps" model="shipment.carrier">
+            <field name="name">USPS</field>
+            <field name="model" 
+                search="[('model', '=', 'shipment.carrier.usps')]"/>
+        </record>
+    
+        <record id="method_categ_01" model="shipment.method.category">
+            <field name="name">Domestic(USPS)</field>
+            <field name="value">domestic</field>            
+        </record>
+    
+        <record id="method_categ_02" model="shipment.method.category">
+            <field name="name">International(USPS)</field>
+            <field name="value">international</field>            
+        </record>
+
+        <record id="ship_method_01" model="shipment.method">
+            <field name="name">Express Mail</field>
+            <field name="active">True</field>
+            <field name="carrier" 
+                search="[('model.model', '=', 'shipment.carrier.usps')]"/>
+            <field name="value">Express</field>
+            <field name="type" ref="method_categ_01" />
+        </record>
+
+        <record id="ship_method_02" model="shipment.method">
+            <field name="name">First-Class Mail</field>
+            <field name="active">True</field>
+            <field name="carrier" 
+                search="[('model.model', '=', 'shipment.carrier.usps')]"/>
+            <field name="value">First</field>
+            <field name="type" ref="method_categ_01" />
+        </record>
+
+        <record id="ship_method_03" model="shipment.method">
+            <field name="name">Library Mail</field>
+            <field name="active">True</field>
+            <field name="carrier" 
+                search="[('model.model', '=', 'shipment.carrier.usps')]"/>
+            <field name="value">LibraryMail</field>
+            <field name="type" ref="method_categ_01" />
+        </record>
+
+        <record id="ship_method_04" model="shipment.method">
+            <field name="name">Media Mail</field>
+            <field name="active">True</field>
+            <field name="carrier" 
+                search="[('model.model', '=', 'shipment.carrier.usps')]"/>
+            <field name="value">MediaMail</field>
+            <field name="type" ref="method_categ_01" />
+        </record>
+
+        <record id="ship_method_05" model="shipment.method">
+            <field name="name">Parcel Post</field>
+            <field name="active">True</field>
+            <field name="carrier" 
+                search="[('model.model', '=', 'shipment.carrier.usps')]"/>
+            <field name="value">ParcelPost</field>
+            <field name="type" ref="method_categ_01" />
+        </record>
+
+        <record id="ship_method_06" model="shipment.method">
+            <field name="name">Parcel Select</field>
+            <field name="active">True</field>
+            <field name="carrier" 
+                search="[('model.model', '=', 'shipment.carrier.usps')]"/>
+            <field name="value">ParcelSelect</field>
+            <field name="type" ref="method_categ_01" />
+        </record>
+
+        <record id="ship_method_07" model="shipment.method">
+            <field name="name">Priority Mail</field>
+            <field name="active">True</field>
+            <field name="carrier" 
+                search="[('model.model', '=', 'shipment.carrier.usps')]"/>
+            <field name="value">Priority</field>
+            <field name="type" ref="method_categ_01" />
+        </record>
+
+        <record id="ship_method_08" model="shipment.method">
+            <field name="name">Standard Mail</field>
+            <field name="active">True</field>
+            <field name="carrier" 
+                search="[('model.model', '=', 'shipment.carrier.usps')]"/>
+            <field name="value">StandardMail</field>
+            <field name="type" ref="method_categ_01" />
+        </record>
+
+        <record id="ship_method_09" model="shipment.method">
+            <field name="name">Express Mail International</field>
+            <field name="active">True</field>
+            <field name="carrier" 
+                search="[('model.model', '=', 'shipment.carrier.usps')]"/>
+            <field name="value">ExpressMailInternational</field>
+            <field name="type" ref="method_categ_02" />
+        </record>
+
+        <record id="ship_method_10" model="shipment.method">
+            <field name="name">First-Class Mail International</field>
+            <field name="active">True</field>
+            <field name="carrier" 
+                search="[('model.model', '=', 'shipment.carrier.usps')]"/>
+            <field name="value">FirstClassMailInternational</field>
+            <field name="type" ref="method_categ_02" />
+        </record>
+
+        <record id="ship_method_11" model="shipment.method">
+            <field name="name">Priority Mail International</field>
+            <field name="active">True</field>
+            <field name="carrier" 
+                search="[('model.model', '=', 'shipment.carrier.usps')]"/>
+            <field name="value">PriorityMailInternational</field>
+            <field name="type" ref="method_categ_02" />
+        </record>
+
+    </data>
+</tryton>

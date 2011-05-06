@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tryton>
+    <data>
+
+        <record model="ir.ui.view" id="inherit_shipment_make_wizard_view_form">
+            <field name="model">shipment.make.wizard.view</field>
+            <field name="type">form</field>
+            <field name="inherit" 
+                ref="shipping.shipment_make_wizard_view_form"/>
+            <field name="arch" type="xml">
+                <![CDATA[
+                <data>
+                    <xpath expr="/form/group/label[@name=&quot;response&quot;]"
+                        position="before">
+                        <label name="label_sub_type"/>
+                        <field name="label_sub_type"/>
+                        <label name="integrated_form_type"/>
+                        <field name="integrated_form_type"/>
+                    </xpath>
+                </data>
+                ]]>
+            </field>
+        </record>
+        
+        <!-- Refund Request Wizard -->
+        <record model="ir.ui.view" id="shipment_refund_wizard_view_form">
+            <field name="model">shipment.refund.wizard.view</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <![CDATA[
+                <form string="Request Refund" col="2">
+                    <label name="refund_approved"/>
+                    <field name="refund_approved"/>
+                    <separator id="status" string="Status" colspan="4"/>
+                    <newline/>
+                    <field name="refund_status" colspan="4"/>
+                </form>
+                ]]>
+            </field>
+        </record>
+
+        <record model="ir.action.wizard" id="action_shipment_refund_wizard">
+            <field name="name">Request Refund</field>
+            <field name="wiz_name">shipment.refund.wizard</field>
+            <field name="model">shipment.record</field>
+        </record>
+        <record model="ir.action.keyword" id="shipment_refund_wizard_keyword">
+            <field name="keyword">form_action</field>
+            <field name="model">shipment.record,0</field>
+            <field name="action" ref="action_shipment_refund_wizard"/>
+        </record>
+        
+        <!-- Make SCAN Form Wizard -->
+        <record model="ir.ui.view" id="shipment_scanform_wizard_view_form">
+            <field name="model">shipment.scanform.wizard.view</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <![CDATA[
+                <form string="Make SCAN Form" col="2">
+                    <separator id="status" string="Status" colspan="4"/>
+                    <newline/>
+                    <field name="response" colspan="4"/>
+                </form>
+                ]]>
+            </field>
+        </record>
+
+        <record model="ir.action.wizard" id="action_shipment_scanform_wizard">
+            <field name="name">Make SCAN Form</field>
+            <field name="wiz_name">shipment.scanform.wizard</field>
+            <field name="model">shipment.record</field>
+        </record>
+        <record model="ir.action.keyword" id="shipment_scanform_wizard_keyword">
+            <field name="keyword">form_action</field>
+            <field name="model">shipment.record,0</field>
+            <field name="action" ref="action_shipment_scanform_wizard"/>
+        </record>
+
+    </data>
+</tryton>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tryton>
+    <data>
+        <record id="company_form_endicia" model="ir.ui.view">
+            <field name="model">company.company</field>
+            <field name="type">form</field>
+            <field name="inherit" ref="company.company_view_form" />
+            <field name="arch" type="xml">
+                <![CDATA[
+                <data>
+                    <xpath expr="/form/notebook" position="inside">
+                        <page string="Configuration" id="configuration">
+                            <separator string="Endicia Settings" colspan="4" 
+                                id="endicia_settings"/>
+                            <newline/>
+                            <label name="account_id" />
+                            <field name="account_id" />
+                            <label name="requester_id" />
+                            <field name="requester_id" />
+                            <label name="passphrase" />
+                            <field name="passphrase" />
+                            <label name="usps_test" />
+                            <field name="usps_test" />
+                        </page>
+                    </xpath>
+                </data>
+                ]]>
+            </field>
+        </record>
+    </data>
+</tryton>
