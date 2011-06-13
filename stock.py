@@ -260,7 +260,7 @@ class CarrierUSPS(ModelSQL):
         for label in labels:
             attachment_obj.create({
                'name': str(tracking_no) + ' - USPS',
-               'datas': str(label),
+               'data': str(label),
                'resource': 'shipment.record,%s' % shipment_record})
         return 'Success'
 
@@ -442,7 +442,7 @@ class SCANFormWizard(Wizard):
         else:
             attachment_obj.create({
                'name': 'SCAN' + str(result.SubmissionID),
-               'datas': str(result.SCANForm),
+               'data': str(result.SCANForm),
                'resource': 'shipment.record,%s' % data['id']})
             res['response'] = 'SCAN' + str(result.SubmissionID)
         return res
