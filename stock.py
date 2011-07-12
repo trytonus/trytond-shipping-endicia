@@ -67,6 +67,7 @@ class StockMakeShipmentWizardView(ModelView):
         ('Form2976', 'Form2976(Same as CN22)'),
         ('Form2976A', 'Form2976(Same as CP72)'),
         ], 'Form Type')
+    include_postage = fields.Boolean('Include Postage ?')
 
 StockMakeShipmentWizardView()
 
@@ -158,6 +159,7 @@ class CarrierUSPS(ModelSQL):
             'Description': description,
             'CustomsCertify': 'TRUE',
             'CustomsSigner': user_obj.browse(Transaction().user).name,
+            'IncludePostage': options['include_postage'] and 'TRUE' or 'FALSE',
             })
         if options['label_sub_type'] != 'None':
             shipping_label_api.add_data({

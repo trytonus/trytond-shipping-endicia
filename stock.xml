@@ -16,6 +16,8 @@
                         <field name="label_sub_type"/>
                         <label name="integrated_form_type"/>
                         <field name="integrated_form_type"/>
+                        <label name="include_postage"/>
+                        <field name="include_postage"/>
                     </xpath>
                 </data>
                 ]]>
