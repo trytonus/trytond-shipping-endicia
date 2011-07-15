@@ -25,11 +25,13 @@ class ShipmentOut(ModelWorkflow, ModelSQL, ModelView):
     def __init__(self):
         super(ShipmentOut, self).__init__()
         self._error_messages.update({
-            'weight_required': 'Please enter weights for the products'
+            'weight_required': 'Please enter weights for the products',
+            'weight_uom_required': 'Please enter weight uom for the products'
         })
 
     def get_move_line_weights(self, shipment_id):
-        """Return weight for individual lines
+        """Return weight for individual lines in oz as zo is the preferred
+        unit for endicia
 
         :param shipment_id: ID of the shipment
         """
@@ -39,22 +41,37 @@ class ShipmentOut(ModelWorkflow, ModelSQL, ModelView):
         shipment = self.browse(shipment_id)
 
         for move in shipment.inventory_moves:
-            product_weight = move.product.weight
+            if not move.product.weight:
+                self.raise_user_error('weight_required')
+            if not move.product.weight_uom:
+                self.raise_user_error('weight_uom_required')
+
+
+            # Find the quantity in the default uom of the product as the weight
+            # is for per unit in that uom
             if move.uom.id != move.product.default_uom.id :
                 quantity = product_uom_obj.compute_qty(
-                    move.uom.id,
+                    move.uom,
                     move.quantity,
-                    move.product.default_uom.id
+                    move.product.default_uom
                     )
             else:
                 quantity = move.quantity
 
-            weight = float(product_weight) * quantity
+            weight = float(move.product.weight) * quantity
 
-            if not weight:
-                self.raise_user_error('weight_required')
+            if move.product.weight_uom.symbol != 'oz':
+                # If the weight is not in lbs then convert it to lbs
+                uom_oz_id, = product_uom_obj.search([('symbol', '=', 'oz')])
+                uom_oz = product_uom_obj.browse(uom_oz_id)
+                weight = product_uom_obj.compute_qty(
+                    move.product.weight_uom,
+                    weight,
+                    uom_oz
+                    )
 
-            weight_matrix[move.id] = weight * 16
+            weight_matrix[move.id] = int(weight)
+
         return weight_matrix
 
 ShipmentOut()
@@ -118,7 +135,7 @@ class CarrierUSPS(ModelSQL):
         line_weights = shipment_obj.get_move_line_weights(shipment_id)
         calculate_postage_request = CalculatingPostageAPI(
             mailclass = method.value,
-            weightoz = sum(line_weights.values())*16,
+            weightoz = sum(line_weights.values()),
             from_postal_code = location.zip,
             to_postal_code = shipment.delivery_address.zip,
             to_country_code = shipment.delivery_address.country.code,
@@ -204,7 +221,7 @@ class CarrierUSPS(ModelSQL):
         delivery_address = shipment.delivery_address
         shipping_label_api = ShippingLabelAPI(
             label_request=label_request,
-            weight_oz=sum(line_weights.values())*16,
+            weight_oz=sum(line_weights.values()),
             partner_customer_id=delivery_address.id,
             partner_transaction_id=shipment.id,
             mail_class=mailclass,
@@ -251,8 +268,8 @@ class CarrierUSPS(ModelSQL):
             self.raise_user_error('error_label', error_args=(error,))
 
         # Do the extra bits here like saving the tracking no
-        tracking_no = result.TrackingNumber
-        postage_paid = result.FinalPostage
+        tracking_no = result.TrackingNumber.pyval
+        postage_paid = result.FinalPostage.pyval
 
         # The label image is available in two elements:
         #  1. Base64LabelImage - This is abset if the label
@@ -271,18 +288,19 @@ class CarrierUSPS(ModelSQL):
             'shipments': [('add', shipment.id)]
             })
 
-        labels = [image for image in result.Label.Image]
+        labels = [image.pyval for image in result.Label.Image]
 
         if not labels:
             image = result.Base64LabelImage
             if image:
-                labels.append(image)
+                labels = [image.pyval]
 
         for label in labels:
             attachment_obj.create({
                'name': str(tracking_no) + ' - USPS',
-               'data': str(label),
-               'resource': 'shipment.record,%s' % shipment_record})
+               'data': label,
+               'resource': 'shipment.record,%s' % shipment_record
+               })
 
         return 'Success'
 
@@ -355,19 +373,17 @@ class RefundRequestWizard(Wizard):
             not endicia_credentials[2]:
             self.raise_user_error('endicia_credentials_required')
         pic_number = shipment_record.tracking_number
-        if endicia_credentials[3]:
-            test = 'Y'
-        else:
-            test = 'N'
+
+        test = endicia_credentials[3] and 'Y' or 'N'
+
         refund_request = RefundRequestAPI(
             pic_number=pic_number,
             accountid=endicia_credentials[0],
             requesterid=endicia_credentials[1],
             passphrase=endicia_credentials[2],
             test=test,
-        )
+            )
         response = refund_request.send_request()
-        print response
         result = objectify_response(response)
         if str(result.RefundList.PICNumber.IsApproved) == 'YES':
             refund_approved = True
