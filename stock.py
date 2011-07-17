@@ -16,9 +16,9 @@ from trytond.model import ModelWorkflow, ModelView, ModelSQL, fields
 from trytond.transaction import Transaction
 from trytond.wizard import Wizard
 
-
 class ShipmentOut(ModelWorkflow, ModelSQL, ModelView):
-    """Extend customer shipment for endicia methods"""
+    """Extend customer shipment for endicia methods
+    """
 
     _name = 'stock.shipment.out'
 
@@ -26,17 +26,17 @@ class ShipmentOut(ModelWorkflow, ModelSQL, ModelView):
         super(ShipmentOut, self).__init__()
         self._error_messages.update({
             'weight_required': 'Please enter weights for the products',
-            'weight_uom_required': 'Please enter weight uom for the products'
+            'weight_uom_required': 'Please enter weight uom for the products',
         })
 
     def get_move_line_weights(self, shipment_id):
-        """Return weight for individual lines in oz as zo is the preferred
+        """
+        Return weight for individual lines in oz as zo is the preferred
         unit for endicia
 
         :param shipment_id: ID of the shipment
         """
         product_uom_obj = self.pool.get('product.uom')
-
         weight_matrix = {}
         shipment = self.browse(shipment_id)
 
@@ -45,7 +45,6 @@ class ShipmentOut(ModelWorkflow, ModelSQL, ModelView):
                 self.raise_user_error('weight_required')
             if not move.product.weight_uom:
                 self.raise_user_error('weight_uom_required')
-
 
             # Find the quantity in the default uom of the product as the weight
             # is for per unit in that uom
@@ -68,10 +67,10 @@ class ShipmentOut(ModelWorkflow, ModelSQL, ModelView):
                     move.product.weight_uom,
                     weight,
                     uom_oz
-                    )
+                )
 
             weight_matrix[move.id] = int(weight)
-
+            
         return weight_matrix
 
 ShipmentOut()
@@ -97,11 +96,11 @@ StockMakeShipmentWizardView()
 
 class CarrierUSPS(ModelSQL):
     'United States Postal Service(USPS)'
-    _name = 'shipment.carrier.usps'
-    _description = __doc__
+    _name = 'carrier'
 
     def __init__(self):
         super(CarrierUSPS, self).__init__()
+        self.carrier_cost_method.selection.append(('usps', 'USPS'))
         self._error_messages.update({
             'endicia_credentials_required': 'Please check the account '
                 'settings for Endicia account.\nSome details may be missing.',
@@ -113,7 +112,7 @@ class CarrierUSPS(ModelSQL):
             'error_label': 'Error in generating label "%s"',
         })
 
-    def estimate_shipment_out(self, method, shipment_id):
+    def get_sale_price(self, carrier):
         """Estimates the shipment rate for the provided shipment
         """
         company_obj = self.pool.get('company.company')
@@ -125,16 +124,15 @@ class CarrierUSPS(ModelSQL):
         if not endicia_credentials[0] or not endicia_credentials[1] or \
             not endicia_credentials[2]:
             self.raise_user_error('endicia_credentials_required')
+        shipment_id = Transaction().context['id']
         shipment = shipment_obj.browse(shipment_id)
-
         #From location is the warehouse location. So it must be filled.
         location = shipment.warehouse.address
         if not location:
             self.raise_user_error('location_required')
-
         line_weights = shipment_obj.get_move_line_weights(shipment_id)
         calculate_postage_request = CalculatingPostageAPI(
-            mailclass = method.value,
+            mailclass = carrier.carrier_product.code,
             weightoz = sum(line_weights.values()),
             from_postal_code = location.zip,
             to_postal_code = shipment.delivery_address.zip,
@@ -148,11 +146,9 @@ class CarrierUSPS(ModelSQL):
         return objectify_response(response).PostagePrice.get('TotalAmount')
 
     def _add_items(self, shipping_label_api, shipment, line_weights, options):
-        """Adding customs items/info and form descriptions to the request
-
-        TODO: This method includes the custom handling which is customer 
-              spceific and must be refactored into a separate module.
-        """
+        '''
+        Adding customs items/info and form descriptions to the request
+        '''
         user_obj = self.pool.get('res.user')
         customsitems = []
         value = 0
@@ -174,13 +170,11 @@ class CarrierUSPS(ModelSQL):
             value = value + \
                     (move.product.customs_value*move.quantity)
             description = description + customs_item_det[0] + ', '
-
         shipping_label_api.add_data({
             'customsinfo':[
                 Element('CustomsItems', customsitems),
                 Element('ContentsType', 'Gift')]})
         shipping_label_api.add_data({
-            # TODO: Make sure this is available for selection from GUI
             'ContentsType': 'Gift',
             'LabelSubtype': options['label_sub_type'],
             'Value': value,
@@ -195,10 +189,12 @@ class CarrierUSPS(ModelSQL):
                 })
         return shipping_label_api
 
-    def _make_label(self, method, shipment, options):
-        """Create a label for given shipment and return the response as such
+    def _make_label(self, carrier, shipment, options):
+        """
+        Create a label for given shipment and return
+        the response as such
 
-        :param method: Browse Record of shipment method
+        :param carrier: Browse Record of shipment method
         :param shipment: Browse Record of outgoing shipment
         :param options: Dictionary of values
         """
@@ -213,7 +209,8 @@ class CarrierUSPS(ModelSQL):
         if not endicia_credentials[0] or not endicia_credentials[1] or \
             not endicia_credentials[2]:
             self.raise_user_error('endicia_credentials_required')
-        mailclass = method.value or 'FirstClassMailInternational'
+        mailclass = carrier.carrier_product.code or \
+            'FirstClassMailInternational'
         label_request = LabelRequest(
             Test=endicia_credentials[3] and 'YES' or 'NO',
             LabelType= ('International' in mailclass) and 'International' \
@@ -230,43 +227,34 @@ class CarrierUSPS(ModelSQL):
             passphrase=endicia_credentials[2],
             test=endicia_credentials[3],
             )
-
         #From location is the warehouse location. So it must be filled.
         location = shipment.warehouse.address
         if not location:
             self.raise_user_error('location_required')
-
         from_address = address_obj.address_to_endicia_from_address(location.id)
         to_address = address_obj.address_to_endicia_to_address(
             delivery_address.id)
         shipping_label_api.add_data(from_address.data)
         shipping_label_api.add_data(to_address.data)
-
         #Comment this line if not required
         shipping_label_api = self._add_items(shipping_label_api, shipment,
             line_weights, options)
         response = shipping_label_api.send_request()
         return objectify_response(response)
 
-    def make_shipment_out(self, method, shipment_id, options):
+    def make_shipment_out(self, carrier, shipment_id, options):
         """Generated the label and creates a shipment record for given shipment
-
-        :param method: WTF
-        :param shipment_id: ID of the shipment
-        :param options: A dictionary of extra options required. In this case
-                        they are: None that we know of
         """
+        result = {}
+        labels = []
         shipment_obj = self.pool.get('stock.shipment.out')
         attachment_obj = self.pool.get('ir.attachment')
         record_obj = self.pool.get('shipment.record')
-
         shipment = shipment_obj.browse(shipment_id)
-
         try:
-            result = self._make_label(method, shipment, options)
+            result = self._make_label(carrier, shipment, options)
         except RequestError, error:
             self.raise_user_error('error_label', error_args=(error,))
-
         # Do the extra bits here like saving the tracking no
         tracking_no = result.TrackingNumber.pyval
         postage_paid = result.FinalPostage.pyval
@@ -280,8 +268,7 @@ class CarrierUSPS(ModelSQL):
         # else, the Base64LabelImage is saved
         shipment_record = record_obj.create({
             'reference': tracking_no,
-            'carrier': method.carrier.id,
-            'method': method.id,
+            'carrier': carrier.id,
             'tracking_number': tracking_no,
             'shipment_cost': postage_paid,
             'state': 'done',
@@ -294,14 +281,12 @@ class CarrierUSPS(ModelSQL):
             image = result.Base64LabelImage
             if image:
                 labels = [image.pyval]
-
         for label in labels:
             attachment_obj.create({
                'name': str(tracking_no) + ' - USPS',
                'data': label,
                'resource': 'shipment.record,%s' % shipment_record
                })
-
         return 'Success'
 
 CarrierUSPS()
@@ -312,7 +297,7 @@ class RefundRequestWizardView(ModelView):
     """
     _name = 'shipment.refund.wizard.view'
     _description = __doc__
-
+    
     refund_status = fields.Text('Refund Status', readonly=True,)
     refund_approved = fields.Boolean('Refund Approved ?', readonly=True,)
 
@@ -324,7 +309,7 @@ class RefundRequestWizard(Wizard):
     """
     _name = 'shipment.refund.wizard'
     _description = 'Shipment Refund Wizard'
-
+    
     def __init__(self):
         super(RefundRequestWizard, self).__init__()
         self._error_messages.update({
@@ -360,10 +345,9 @@ class RefundRequestWizard(Wizard):
         """Requests the refund for the current shipment record 
         and returns the response.
         """
+        res = data['form']
         company_obj = self.pool.get('company.company')
         shipment_record_obj = self.pool.get('shipment.record')
-
-        res = data['form']
         shipment_record = shipment_record_obj.browse(data['id'])
         # Getting the api credentials to be used in refund request generation
         # endicia credentials are in the format : 
@@ -375,7 +359,7 @@ class RefundRequestWizard(Wizard):
         pic_number = shipment_record.tracking_number
 
         test = endicia_credentials[3] and 'Y' or 'N'
-
+        
         refund_request = RefundRequestAPI(
             pic_number=pic_number,
             accountid=endicia_credentials[0],
@@ -412,7 +396,7 @@ class SCANFormWizard(Wizard):
     """
     _name = 'shipment.scanform.wizard'
     _description = 'Shipment SCAN Form Wizard'
-
+    
     def __init__(self):
         super(SCANFormWizard, self).__init__()
         self._error_messages.update({
