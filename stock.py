@@ -70,7 +70,7 @@ class ShipmentOut(ModelWorkflow, ModelSQL, ModelView):
                 )
 
             weight_matrix[move.id] = int(weight)
-            
+
         return weight_matrix
 
 ShipmentOut()
@@ -110,6 +110,7 @@ class CarrierUSPS(ModelSQL):
                 '\nAdd the details under Custom Details '
                 'tab on product page of "%s"',
             'error_label': 'Error in generating label "%s"',
+            'draft_state': 'Cannot process if the shipment state is Draft',
         })
 
     def get_sale_price(self, carrier):
@@ -126,6 +127,9 @@ class CarrierUSPS(ModelSQL):
             self.raise_user_error('endicia_credentials_required')
         shipment_id = Transaction().context['id']
         shipment = shipment_obj.browse(shipment_id)
+
+        if shipment.state == 'draft':
+            self.raise_user_error('draft_state')
         #From location is the warehouse location. So it must be filled.
         location = shipment.warehouse.address
         if not location:
@@ -209,6 +213,10 @@ class CarrierUSPS(ModelSQL):
         if not endicia_credentials[0] or not endicia_credentials[1] or \
             not endicia_credentials[2]:
             self.raise_user_error('endicia_credentials_required')
+
+        if shipment.state == 'draft':
+            self.raise_user_error('draft_state')
+
         mailclass = carrier.carrier_product.code or \
             'FirstClassMailInternational'
         label_request = LabelRequest(
@@ -275,7 +283,8 @@ class CarrierUSPS(ModelSQL):
             'shipments': [('add', shipment.id)]
             })
 
-        labels = [image.pyval for image in result.Label.Image]
+        if result.get('Label'):
+            labels = [image.pyval for image in result.Label.Image]
 
         if not labels:
             image = result.Base64LabelImage
