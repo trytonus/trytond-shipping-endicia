@@ -40,7 +40,7 @@ class ShipmentOut(ModelWorkflow, ModelSQL, ModelView):
         weight_matrix = {}
         shipment = self.browse(shipment_id)
 
-        for move in shipment.inventory_moves:
+        for move in shipment.outgoing_moves:
             if not move.product.weight:
                 self.raise_user_error('weight_required')
             if not move.product.weight_uom:
@@ -110,7 +110,6 @@ class CarrierUSPS(ModelSQL):
                 '\nAdd the details under Custom Details '
                 'tab on product page of "%s"',
             'error_label': 'Error in generating label "%s"',
-            'draft_state': 'Cannot process if the shipment state is Draft',
         })
 
     def get_sale_price(self, carrier):
@@ -128,8 +127,6 @@ class CarrierUSPS(ModelSQL):
         shipment_id = Transaction().context['id']
         shipment = shipment_obj.browse(shipment_id)
 
-        if shipment.state == 'draft':
-            self.raise_user_error('draft_state')
         #From location is the warehouse location. So it must be filled.
         location = shipment.warehouse.address
         if not location:
@@ -157,7 +154,7 @@ class CarrierUSPS(ModelSQL):
         customsitems = []
         value = 0
         description = ''
-        for move in shipment.inventory_moves:
+        for move in shipment.outgoing_moves:
             customs_item_det = (
                 move.product.customs_desc, move.product.customs_value
             )
@@ -213,9 +210,6 @@ class CarrierUSPS(ModelSQL):
         if not endicia_credentials[0] or not endicia_credentials[1] or \
             not endicia_credentials[2]:
             self.raise_user_error('endicia_credentials_required')
-
-        if shipment.state == 'draft':
-            self.raise_user_error('draft_state')
 
         mailclass = carrier.carrier_product.code or \
             'FirstClassMailInternational'
@@ -456,10 +450,9 @@ class SCANFormWizard(Wizard):
             self.raise_user_error('endicia_credentials_required')
         # tracking_no is same as PICNumber
         pic_number = shipment_record.tracking_number
-        if endicia_credentials[3]:
-            test = 'Y'
-        else:
-            test = 'N'
+
+        test = endicia_credentials[3] and 'Y' or 'N'
+        
         scan_request = SCANFormAPI(
             pic_number=pic_number,
             accountid=endicia_credentials[0],

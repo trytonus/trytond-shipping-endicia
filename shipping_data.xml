@@ -18,6 +18,7 @@
         <record id="ship_method_01" model="product.product">
             <field name="name">Express Mail</field>
             <field name="default_uom" ref="product.uom_unit" />
+            <field name="weight_uom" ref="product.uom_ounce" />
             <field name="code">Express</field>
             <field name="type">service</field>
             <field name="category" ref="method_categ_01" />
@@ -32,6 +33,7 @@
         <record id="ship_method_02" model="product.product">
             <field name="name">First-Class Mail</field>
             <field name="default_uom" ref="product.uom_unit" />
+            <field name="weight_uom" ref="product.uom_ounce" />
             <field name="code">First</field>
             <field name="type">service</field>
             <field name="category" ref="method_categ_01" />
@@ -46,6 +48,7 @@
         <record id="ship_method_03" model="product.product">
             <field name="name">Library Mail</field>
             <field name="default_uom" ref="product.uom_unit" />
+            <field name="weight_uom" ref="product.uom_ounce" />
             <field name="code">LibraryMail</field>
             <field name="type">service</field>
             <field name="category" ref="method_categ_01" />
@@ -60,6 +63,7 @@
         <record id="ship_method_04" model="product.product">
             <field name="name">Media Mail</field>
             <field name="default_uom" ref="product.uom_unit" />
+            <field name="weight_uom" ref="product.uom_ounce" />
             <field name="code">MediaMail</field>
             <field name="type">service</field>
             <field name="category" ref="method_categ_01" />
@@ -74,6 +78,7 @@
         <record id="ship_method_05" model="product.product">
             <field name="name">Parcel Post</field>
             <field name="default_uom" ref="product.uom_unit" />
+            <field name="weight_uom" ref="product.uom_ounce" />
             <field name="code">ParcelPost</field>
             <field name="type">service</field>
             <field name="category" ref="method_categ_01" />
@@ -88,6 +93,7 @@
         <record id="ship_method_06" model="product.product">
             <field name="name">Parcel Select</field>
             <field name="default_uom" ref="product.uom_unit" />
+            <field name="weight_uom" ref="product.uom_ounce" />
             <field name="code">ParcelSelect</field>
             <field name="type">service</field>
             <field name="category" ref="method_categ_01" />
@@ -102,6 +108,7 @@
         <record id="ship_method_07" model="product.product">
             <field name="name">Priority Mail</field>
             <field name="default_uom" ref="product.uom_unit" />
+            <field name="weight_uom" ref="product.uom_ounce" />
             <field name="code">Priority</field>
             <field name="type">service</field>
             <field name="category" ref="method_categ_01" />
@@ -116,6 +123,7 @@
         <record id="ship_method_08" model="product.product">
             <field name="name">Standard Mail</field>
             <field name="default_uom" ref="product.uom_unit" />
+            <field name="weight_uom" ref="product.uom_ounce" />
             <field name="code">StandardMail</field>
             <field name="type">service</field>
             <field name="category" ref="method_categ_01" />
@@ -130,6 +138,7 @@
         <record id="ship_method_09" model="product.product">
             <field name="name">Express Mail International</field>
             <field name="default_uom" ref="product.uom_unit" />
+            <field name="weight_uom" ref="product.uom_ounce" />
             <field name="code">ExpressMailInternational</field>
             <field name="type">service</field>
             <field name="category" ref="method_categ_02" />
@@ -143,6 +152,7 @@
         
         <record id="ship_method_10" model="product.product">
             <field name="name">First-Class Mail International</field>
+            <field name="weight_uom" ref="product.uom_ounce" />
             <field name="default_uom" ref="product.uom_unit" />
             <field name="code">FirstClassMailInternational</field>
             <field name="type">service</field>
@@ -158,6 +168,7 @@
         <record id="ship_method_11" model="product.product">
             <field name="name">Priority Mail International</field>
             <field name="default_uom" ref="product.uom_unit" />
+            <field name="weight_uom" ref="product.uom_ounce" />
             <field name="code">PriorityMailInternational</field>
             <field name="type">service</field>
             <field name="category" ref="method_categ_02" />
