@@ -149,6 +149,17 @@ class Carrier(ModelSQL, ModelView):
         else:
             return 0, False
 
+    def label_from_shipment_out(self, carrier, shipment_id, options):
+        """This method will call the corresponding method to generate the 
+        label from the expected class
+        """
+        if carrier.carrier_cost_method != 'endicia-usps':
+            return False
+        endicia_obj = self.pool.get('carrier.endicia-usps')
+        return endicia_obj.label_from_shipment_out(carrier, 
+            shipment_id, options) 
+
+
 Carrier()
 
 
