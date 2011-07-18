@@ -7,4 +7,3 @@ Endicia integration
 from .company import *
 from .party import *
 from .stock import *
-from .product import *

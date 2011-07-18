@@ -127,8 +127,6 @@ class EndiciaTestCase(unittest.TestCase):
                 'list_price': Decimal('20.0'),
                 'cost_price_method': 'fixed',
                 'default_uom': kg_id,
-                'customs_desc': 'Product1',
-                'customs_value': 20.0,
                 'weight': Decimal('10.0'),
                 'weight_uom': oz_id,
                 })
@@ -262,8 +260,6 @@ class EndiciaTestCase(unittest.TestCase):
                 'list_price': Decimal('20.0'),
                 'cost_price_method': 'fixed',
                 'default_uom': kg_id,
-                'customs_desc': 'Product1',
-                'customs_value': 20.0,
                 'weight': Decimal('5.0'),
                 'weight_uom': oz_id,
                 })

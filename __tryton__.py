@@ -8,7 +8,7 @@
         The Endicia Label Server produces an integrated label image, 
         complete with Stealth (hidden) postage, return addresses, 
         verified delivery addresses, and service barcodes ''',
-    'version': '2.0.0.1',
+    'version': '2.0.0.2',
     'author': 'Openlabs Technologies & Consulting (P) LTD',
     'email': 'info@openlabs.co.in',
     'website': 'http://www.openlabs.co.in/',
@@ -18,7 +18,6 @@
     ],
     'xml': [
        'company.xml',
-       'product.xml',
        'stock.xml',
        'shipping_data.xml'
     ],

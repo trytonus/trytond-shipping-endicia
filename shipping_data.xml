@@ -27,7 +27,7 @@
         <record id="carrier_usps_01" model="carrier">
             <field name="party" ref="party_usps"/>
             <field name="carrier_product" ref="ship_method_01"/>
-            <field name="carrier_cost_method">usps</field>
+            <field name="carrier_cost_method">endicia-usps</field>
         </record>
         
         <record id="ship_method_02" model="product.product">
@@ -42,7 +42,7 @@
         <record id="carrier_usps_02" model="carrier">
             <field name="party" ref="party_usps"/>
             <field name="carrier_product" ref="ship_method_02"/>
-            <field name="carrier_cost_method">usps</field>
+            <field name="carrier_cost_method">endicia-usps</field>
         </record>
         
         <record id="ship_method_03" model="product.product">
@@ -57,7 +57,7 @@
         <record id="carrier_usps_03" model="carrier">
             <field name="party" ref="party_usps"/>
             <field name="carrier_product" ref="ship_method_03"/>
-            <field name="carrier_cost_method">usps</field>
+            <field name="carrier_cost_method">endicia-usps</field>
         </record>
         
         <record id="ship_method_04" model="product.product">
@@ -72,7 +72,7 @@
         <record id="carrier_usps_04" model="carrier">
             <field name="party" ref="party_usps"/>
             <field name="carrier_product" ref="ship_method_04"/>
-            <field name="carrier_cost_method">usps</field>
+            <field name="carrier_cost_method">endicia-usps</field>
         </record>
         
         <record id="ship_method_05" model="product.product">
@@ -87,7 +87,7 @@
         <record id="carrier_usps_05" model="carrier">
             <field name="party" ref="party_usps"/>
             <field name="carrier_product" ref="ship_method_05"/>
-            <field name="carrier_cost_method">usps</field>
+            <field name="carrier_cost_method">endicia-usps</field>
         </record>
         
         <record id="ship_method_06" model="product.product">
@@ -102,7 +102,7 @@
         <record id="carrier_usps_06" model="carrier">
             <field name="party" ref="party_usps"/>
             <field name="carrier_product" ref="ship_method_06"/>
-            <field name="carrier_cost_method">usps</field>
+            <field name="carrier_cost_method">endicia-usps</field>
         </record>
         
         <record id="ship_method_07" model="product.product">
@@ -117,7 +117,7 @@
         <record id="carrier_usps_07" model="carrier">
             <field name="party" ref="party_usps"/>
             <field name="carrier_product" ref="ship_method_07"/>
-            <field name="carrier_cost_method">usps</field>
+            <field name="carrier_cost_method">endicia-usps</field>
         </record>
         
         <record id="ship_method_08" model="product.product">
@@ -132,7 +132,7 @@
         <record id="carrier_usps_08" model="carrier">
             <field name="party" ref="party_usps"/>
             <field name="carrier_product" ref="ship_method_08"/>
-            <field name="carrier_cost_method">usps</field>
+            <field name="carrier_cost_method">endicia-usps</field>
         </record>
         
         <record id="ship_method_09" model="product.product">
@@ -147,7 +147,7 @@
         <record id="carrier_usps_09" model="carrier">
             <field name="party" ref="party_usps"/>
             <field name="carrier_product" ref="ship_method_09"/>
-            <field name="carrier_cost_method">usps</field>
+            <field name="carrier_cost_method">endicia-usps</field>
         </record>
         
         <record id="ship_method_10" model="product.product">
@@ -162,7 +162,7 @@
         <record id="carrier_usps_10" model="carrier">
             <field name="party" ref="party_usps"/>
             <field name="carrier_product" ref="ship_method_10"/>
-            <field name="carrier_cost_method">usps</field>
+            <field name="carrier_cost_method">endicia-usps</field>
         </record>
         
         <record id="ship_method_11" model="product.product">
@@ -177,7 +177,7 @@
         <record id="carrier_usps_11" model="carrier">
             <field name="party" ref="party_usps"/>
             <field name="carrier_product" ref="ship_method_11"/>
-            <field name="carrier_cost_method">usps</field>
+            <field name="carrier_cost_method">endicia-usps</field>
         </record>
 
     </data>
