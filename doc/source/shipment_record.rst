@@ -11,7 +11,7 @@ Click the **Make Scan Form**.
 .. image:: _images/14.png
     :width: 1000
     
-.. note:: For scan form we have to create a folder in tryton workspace for the attachment.
+\
           
 .. image:: _images/b.png
     :width: 1000
@@ -28,8 +28,8 @@ If you want to cancel the shipment request , then click **Request Refund**.
 
 .. image:: _images/c.png
     :width: 1000
-
-/
+    
+\
 
 .. image:: _images/d.png
     :width: 1000

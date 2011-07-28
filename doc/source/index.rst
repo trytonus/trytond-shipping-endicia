@@ -17,6 +17,7 @@ Contents:
    customer_shipment.rst
    shipment_record.rst
    api_reference.rst
+   about.rst
 
 Indices and tables
 ==================

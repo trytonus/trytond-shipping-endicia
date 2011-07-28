@@ -1,7 +1,9 @@
 Address
 #######
 
-For Endicia Integration *Warehouse address* and *Delivery address* should be different.
+For making a shipment through USPS using Endicia, `Warehouse Address` is 
+required, which acts as the sender's address. The delivery address defaults 
+to the customer's address.  
 
 Warehouse Address
 """""""""""""""""
