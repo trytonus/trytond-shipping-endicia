@@ -7,4 +7,4 @@ Product
     :width: 1000
 
 .. note:: Here Salable field should be checked.
-               Weight UOM field should be selected as Ounce only.
+          And weight UOM field has to be configured as Ounce.

@@ -1,4 +1,4 @@
-.. Endica Integration documentation master file, created by
+.. Endicia Integration documentation master file, created by
    sphinx-quickstart on Sat Jul 23 11:23:35 2011.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
