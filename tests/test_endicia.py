@@ -42,7 +42,7 @@ class EndiciaTestCase(unittest.TestCase):
             type='wizard')
         self.ship_make_wiz_obj = POOL.get('shipment.make.wizard', 
             type='wizard')
-        self.shipment_method = POOL.get('shipment.method')
+        self.carrier = POOL.get('carrier')
         self.attachment = POOL.get('ir.attachment')
 
     def test_0010_estimate_cost(self):
@@ -119,6 +119,7 @@ class EndiciaTestCase(unittest.TestCase):
                 'name': 'Category1',
                 })
             kg_id, = self.uom.search([('name', '=', 'Kilogram')])
+            oz_id, = self.uom.search([('symbol', '=', 'oz')])
             product_id = self.product.create({
                 'name': 'Product1',
                 'type': 'stockable',
@@ -126,13 +127,13 @@ class EndiciaTestCase(unittest.TestCase):
                 'list_price': Decimal('20.0'),
                 'cost_price_method': 'fixed',
                 'default_uom': kg_id,
-                'customs_desc': 'Product1',
-                'customs_value': 20.0,
-                'weight': Decimal('1.0'),
+                'weight': Decimal('10.0'),
+                'weight_uom': oz_id,
                 })
             warehouse_id, = self.stock_location.search([
                 ('code', '=', 'WH')
                 ], limit=1)
+            warehouse = self.stock_location.browse(warehouse_id)
             self.stock_location.write(warehouse_id, {
                 'address': from_address_id,
                 })
@@ -153,6 +154,7 @@ class EndiciaTestCase(unittest.TestCase):
                 'company': company.id,
                 'unit_price': Decimal('1'),
                 'currency': currency_id,
+                'from_location': warehouse.output_location.id
                 })
 
             shipment_id = self.shipment.create({
@@ -162,12 +164,14 @@ class EndiciaTestCase(unittest.TestCase):
                 'warehouse': warehouse_id,
                 'moves': [('add', [move_id])],
                 })
-            method_id, = self.shipment_method.search(
-                [('value', '=', 'Priority')], limit=1)
+            self.shipment.set_outgoing_moves([shipment_id], 'outgoing_moves', 
+                [('add', [move_id])])
+            carrier_id, = self.carrier.search(
+                [('carrier_product.code', '=', 'Priority')], limit=1)
             ship_estimate = self.ship_estimate_wiz_obj.create()
             rv = self.ship_estimate_wiz_obj.execute(ship_estimate, {
                 'form': {
-                    'method': method_id,
+                    'carrier': carrier_id,
                     },
                 'id': shipment_id,
                     },
@@ -248,6 +252,7 @@ class EndiciaTestCase(unittest.TestCase):
                 'name': 'Category1',
                 })
             kg_id, = self.uom.search([('name', '=', 'Kilogram')])
+            oz_id, = self.uom.search([('symbol', '=', 'oz')])
             product_id = self.product.create({
                 'name': 'Product1',
                 'type': 'stockable',
@@ -255,13 +260,13 @@ class EndiciaTestCase(unittest.TestCase):
                 'list_price': Decimal('20.0'),
                 'cost_price_method': 'fixed',
                 'default_uom': kg_id,
-                'customs_desc': 'Product1',
-                'customs_value': 20.0,
-                'weight': Decimal('0.25'),
+                'weight': Decimal('5.0'),
+                'weight_uom': oz_id,
                 })
             warehouse_id, = self.stock_location.search([
                 ('code', '=', 'WH')
                 ], limit=1)
+            warehouse = self.stock_location.browse(warehouse_id)
             self.stock_location.write(warehouse_id, {
                 'address': from_address_id,
                 })
@@ -282,6 +287,7 @@ class EndiciaTestCase(unittest.TestCase):
                 'company': company.id,
                 'unit_price': Decimal('1'),
                 'currency': currency_id,
+                'from_location': warehouse.output_location.id
                 })
 
             shipment_id = self.shipment.create({
@@ -291,8 +297,10 @@ class EndiciaTestCase(unittest.TestCase):
                 'warehouse': warehouse_id,
                 'moves': [('add', [move_id])],
                 })
-            method_id, = self.shipment_method.search(
-                [('value', '=', 'First')], limit=1)
+            self.shipment.set_outgoing_moves([shipment_id], 'outgoing_moves', 
+                [('add', [move_id])])
+            carrier_id, = self.carrier.search(
+                [('carrier_product.code', '=', 'First')], limit=1)
             ship_make = self.ship_make_wiz_obj.create()
 
             # Storing the number of attachents before the label is generated
@@ -300,7 +308,7 @@ class EndiciaTestCase(unittest.TestCase):
 
             rv = self.ship_make_wiz_obj.execute(ship_make, {
                 'form': {
-                    'method': method_id,
+                    'carrier': carrier_id,
                     'label_sub_type': 'None',
                     'integrated_form_type': 'Form2976',
                     'include_postage': True,

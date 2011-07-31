@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 """
 Customizes party address to have address in correct format for Endicia API .
 """
@@ -17,14 +18,13 @@ class Address(ModelSQL, ModelView):
     Address
     '''
     _name = "party.address"
-    
+
     def address_to_endicia_from_address(self, id):
         '''
-            Converts partner address to Endicia Form Address.
-            
-            :param id: ID of record 
-            
-            :param return: Returns instance of FromAddress
+        Converts partner address to Endicia Form Address.
+
+        :param id: ID of record
+        :param return: Returns instance of FromAddress
         '''
         user_obj = self.pool.get('res.user')
         if type(id) == list:
@@ -33,6 +33,7 @@ class Address(ModelSQL, ModelView):
         user_rec = user_obj.browse(Transaction().user)
         phone = address.party.phone
         if phone:
+            # Remove the special characters in the phone if any
             phone = "".join([char for char in phone if char in string.digits])
         return FromAddress(
             FromName = user_rec.name or None,
@@ -48,20 +49,20 @@ class Address(ModelSQL, ModelView):
             FromPhone = phone or None,
             FromEMail = address.party.email or None,
         )
-                   
+
     def address_to_endicia_to_address(self, id):
         '''
-            Converts party address to Endicia Form Address.
-            
-            :param id: ID of record
-            
-            :param return: Returns instance of ToAddress
+        Converts party address to Endicia Form Address.
+
+        :param id: ID of record
+        :param return: Returns instance of ToAddress
         '''
         if type(id) == list:
             id = id[0]
         address = self.browse(id)
         phone = address.party.phone
         if phone:
+            # Remove the special characters in the phone if any
             phone = "".join([char for char in phone if char in string.digits])
         return ToAddress(
             ToName = address.name or None,
@@ -80,5 +81,5 @@ class Address(ModelSQL, ModelView):
             ToPhone = phone or None,
             ToEMail = address.party.email or None,
         )
-        
+
 Address()
