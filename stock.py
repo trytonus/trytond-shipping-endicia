@@ -9,7 +9,7 @@ Inherit stock for endicia API
 '''
 from endicia import ShippingLabelAPI, LabelRequest, RefundRequestAPI, \
     SCANFormAPI, CalculatingPostageAPI, Element
-from endicia.tools import objectify_response
+from endicia.tools import objectify_response, get_images
 from endicia.exceptions import RequestError
 
 from trytond.model import ModelWorkflow, ModelView, ModelSQL, fields
@@ -272,7 +272,9 @@ class CarrierEndiciaUSPS(ModelSQL):
         #Comment this line if not required
         shipping_label_api = self._add_items_from_moves(shipping_label_api,
             shipment.outgoing_moves, line_weights)
+
         response = shipping_label_api.send_request()
+
         return objectify_response(response)
 
     def label_from_shipment_out(self, carrier, shipment_id, options):
@@ -308,16 +310,11 @@ class CarrierEndiciaUSPS(ModelSQL):
             'shipments': [('add', shipment.id)]
             })
 
-        if result.get('Label'):
-            labels = [image.pyval for image in result.Label.Image]
+        images = get_images(result)
 
-        if not labels:
-            image = result.Base64LabelImage
-            if image:
-                labels = [image.pyval]
-        for label in labels:
+        for (id, label) in images:
             attachment_obj.create({
-               'name': str(tracking_no) + ' - USPS',
+               'name': str(tracking_no) + ' - ' + str(id) + ' - USPS',
                'data': label,
                'resource': 'shipment.record,%s' % shipment_record
                })
