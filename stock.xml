@@ -78,5 +78,34 @@
             <field name="action" ref="action_shipment_scanform_wizard"/>
         </record>
 
+        <!-- Buy Postage Wizard -->
+        <record model="ir.ui.view" id="buy_postage_wizard_view_form">
+            <field name="model">buy.postage.wizard.view</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <![CDATA[
+                <form string="Buy Postage" col="2">
+                    <label name="company"/>
+                    <field name="company"/>
+                    <label name="amount"/>
+                    <field name="amount"/>
+                    <separator id="status" string="Status" colspan="4"/>
+                    <newline/>
+                    <field name="response" colspan="4"/>
+                </form>
+                ]]>
+            </field>
+        </record>
+
+        <record model="ir.action.wizard" id="action_buy_postage_wizard">
+            <field name="name">Buy USPS Postage</field>
+            <field name="wiz_name">buy.postage.wizard</field>
+        </record>
+        <menuitem name="Buy USPS Postage"
+            parent="shipping.menu_stock_shipment"
+            action="action_buy_postage_wizard"
+            id="menu_buy_postage_wizard"
+            sequence="10"/>
+
     </data>
 </tryton>

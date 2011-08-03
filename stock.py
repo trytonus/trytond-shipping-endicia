@@ -8,7 +8,7 @@
 Inherit stock for endicia API
 '''
 from endicia import ShippingLabelAPI, LabelRequest, RefundRequestAPI, \
-    SCANFormAPI, CalculatingPostageAPI, Element
+    SCANFormAPI, CalculatingPostageAPI, BuyingPostageAPI, Element
 from endicia.tools import objectify_response, get_images
 from endicia.exceptions import RequestError
 
@@ -488,3 +488,81 @@ class SCANFormWizard(Wizard):
         return res
 
 SCANFormWizard()
+
+
+class BuyPostageWizardView(ModelView):
+    """Buy Postage Wizard View
+    """
+    _name = 'buy.postage.wizard.view'
+    _description = __doc__
+
+    company = fields.Many2One('company.company', 'Company')
+    amount = fields.Numeric('Amount')
+    response = fields.Text('Response', readonly=True)
+
+    def default_company(self):
+        user_obj = self.pool.get('res.user')
+        user = user_obj.browse(Transaction().user)
+        return user.company.id
+
+BuyPostageWizardView()
+
+
+class BuyPostageWizard(Wizard):
+    """Buy Postage Wizard
+    """
+    _name = 'buy.postage.wizard'
+    _description = __doc__
+
+    states = {
+        'init': {
+            'actions': [],
+            'result': {
+                'type': 'form',
+                'object': 'buy.postage.wizard.view',
+                'state': [
+                    ('end', 'Cancel', 'tryton-cancel'),
+                    ('buy_postage', 'Buy Postage', 'tryton-ok', True),
+                ],
+            },
+        },
+        'buy_postage': {
+            'actions': ['_buy_postage'],
+            'result': {
+                'type': 'form',
+                'object': 'buy.postage.wizard.view',
+                'state': [
+                    ('end', 'Ok', 'tryton-ok'),
+                ],
+            },
+        },
+    }
+
+    def _buy_postage(self, data):
+        """
+        Generate the SCAN Form for the current shipment record
+        """
+        res = data['form']
+        company_obj = self.pool.get('company.company')
+        # Getting the api credentials to be used in refund request generation
+        # endicia credentials are in the format : 
+        # (account_id, requester_id, passphrase, is_test)
+        endicia_credentials = company_obj.get_endicia_credentials()
+
+        test = endicia_credentials.usps_test and 'Y' or 'N'
+
+        buy_postage_api = BuyingPostageAPI(
+           request_id = Transaction().user,
+           recredit_amount = res['amount'],
+           requesterid = endicia_credentials.requester_id,
+           accountid = endicia_credentials.account_id,
+           passphrase = endicia_credentials.passphrase,
+           test = test,
+        )
+        response = buy_postage_api.send_request()
+
+        result = objectify_response(response)
+        res['response'] = str(result.ErrorMessage)
+        return res
+
+BuyPostageWizard()
