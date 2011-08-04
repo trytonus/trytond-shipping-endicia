@@ -334,6 +334,18 @@ class RefundRequestWizardView(ModelView):
 
 RefundRequestWizardView()
 
+class Record(ModelSQL, ModelView):
+    """
+    Inherit the Record module from shipment to modify the state field
+    """
+    _name = 'shipment.record'
+
+    state = fields.Selection([
+        ('done', 'Done'),
+        ('cancel', 'Refunded/Cancelled')
+        ], 'State', readonly=True, select="2")
+
+Record()
 
 class RefundRequestWizard(Wizard):
     """A wizard to cancel the current shipment and refund the cost
@@ -392,6 +404,9 @@ class RefundRequestWizard(Wizard):
         result = objectify_response(response)
         if str(result.RefundList.PICNumber.IsApproved) == 'YES':
             refund_approved = True
+            # If refund is approved, then set the state of record 
+            # as cancel/refund
+            shipment_record_obj.write(data['id'], {'state': 'cancel'})
         else:
             refund_approved = False
         res['refund_status'] = str(result.RefundList.PICNumber.ErrorMsg)
