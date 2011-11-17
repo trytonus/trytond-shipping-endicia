@@ -41,7 +41,7 @@ class ShipmentOut(ModelWorkflow, ModelSQL, ModelView):
         weight_matrix = {}
         shipment = self.browse(shipment_id)
 
-        for move in shipment.outgoing_moves:
+        for move in shipment.inventory_moves:
             if not move.product.weight:
                 self.raise_user_error('weight_required')
             if not move.product.weight_uom:
@@ -193,7 +193,7 @@ class CarrierEndiciaUSPS(ModelSQL):
                 self.raise_user_error('custom_details_required',
                     error_args=(move.product.name,))
             new_item = [
-                Element('Description',customs_item_det[0]),
+                Element('Description',customs_item_det[0][:50]),
                 Element('Quantity', int(move.quantity)),
                 Element('Weight', int(line_weights[move.id])),
                 Element('Value', customs_item_det[1]),
@@ -209,7 +209,7 @@ class CarrierEndiciaUSPS(ModelSQL):
         shipping_label_api.add_data({
             'ContentsType': 'Gift',
             'Value': value,
-            'Description': description,
+            'Description': description[:50],
             'CustomsCertify': 'TRUE',
             'CustomsSigner': user_obj.browse(Transaction().user).name,
             })
@@ -271,7 +271,7 @@ class CarrierEndiciaUSPS(ModelSQL):
                 })
         #Comment this line if not required
         shipping_label_api = self._add_items_from_moves(shipping_label_api,
-            shipment.outgoing_moves, line_weights)
+            shipment.inventory_moves, line_weights)
 
         response = shipping_label_api.send_request()
 
