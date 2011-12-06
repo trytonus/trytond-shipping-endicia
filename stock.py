@@ -564,20 +564,19 @@ class BuyPostageWizard(Wizard):
         # (account_id, requester_id, passphrase, is_test)
         endicia_credentials = company_obj.get_endicia_credentials()
 
-        test = endicia_credentials.usps_test and 'Y' or 'N'
-
         buy_postage_api = BuyingPostageAPI(
            request_id = Transaction().user,
            recredit_amount = res['amount'],
            requesterid = endicia_credentials.requester_id,
            accountid = endicia_credentials.account_id,
            passphrase = endicia_credentials.passphrase,
-           test = test,
+           test = endicia_credentials.usps_test,
         )
         response = buy_postage_api.send_request()
 
         result = objectify_response(response)
-        res['response'] = str(result.ErrorMessage)
+        res['response'] = str(result.ErrorMessage) \
+            if hasattr(result, 'ErrorMessage') else 'Success'
         return res
 
 BuyPostageWizard()
