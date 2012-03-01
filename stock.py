@@ -30,12 +30,13 @@ class ShipmentOut(ModelWorkflow, ModelSQL, ModelView):
             'weight_uom_required': 'Please enter weight uom for the products',
         })
 
-    def get_move_line_weights(self, shipment_id):
+    def get_move_line_weights(self, shipment_id, uom_symbol):
         """
         Return weight for individual lines in oz as zo is the preferred
         unit for endicia
 
         :param shipment_id: ID of the shipment
+        :param uom_symbol: UOM name of the weight Eg: lbs, oz
         """
         product_uom_obj = self.pool.get('product.uom')
         weight_matrix = {}
@@ -60,14 +61,13 @@ class ShipmentOut(ModelWorkflow, ModelSQL, ModelView):
 
             weight = float(move.product.weight) * quantity
 
-            if move.product.weight_uom.symbol != 'oz':
-                # If the weight is not in lbs then convert it to lbs
-                uom_oz_id, = product_uom_obj.search([('symbol', '=', 'oz')])
-                uom_oz = product_uom_obj.browse(uom_oz_id)
+            if move.product.weight_uom.symbol != uom_symbol:
+                uom_id, = product_uom_obj.search([('symbol', '=', uom_symbol)])
+                uom = product_uom_obj.browse(uom_id)
                 weight = product_uom_obj.compute_qty(
                     move.product.weight_uom,
                     weight,
-                    uom_oz
+                    uom
                 )
 
             weight_matrix[move.id] = int(weight)
