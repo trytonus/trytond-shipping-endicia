@@ -131,7 +131,7 @@ class Carrier(ModelSQL, ModelView):
             location = shipment.warehouse.address
             if not location:
                 self.raise_user_error('location_required')
-            line_weights = shipment_obj.get_move_line_weights(shipment_id)
+            line_weights = shipment_obj.get_move_line_weights(shipment_id, 'oz')
             calculate_postage_request = CalculatingPostageAPI(
                 mailclass = carrier.carrier_product.code,
                 weightoz = sum(line_weights.values()),
@@ -227,7 +227,7 @@ class CarrierEndiciaUSPS(ModelSQL):
         address_obj = self.pool.get('party.address')
         company_obj = self.pool.get('company.company')
         shipment_obj = self.pool.get('stock.shipment.out')
-        line_weights = shipment_obj.get_move_line_weights(shipment.id)
+        line_weights = shipment_obj.get_move_line_weights(shipment.id, 'oz')
         # Getting the api credentials to be used in shipping label generation
         # endicia credentials are in the format : 
         # EndiciaSettings(account_id, requester_id, passphrase, is_test)
