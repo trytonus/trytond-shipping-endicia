@@ -238,7 +238,13 @@ class CarrierEndiciaUSPS(ModelSQL):
         label_request = LabelRequest(
             Test=endicia_credentials.usps_test and 'YES' or 'NO',
             LabelType= ('International' in mailclass) and 'International' \
-                or 'Default')
+                or 'Default',
+            # this size and dpi combi works only for FirstClassInternational
+            ImageFormat="PNG", 
+            LabelSize="6x4",
+            ImageResolution="203",
+            ImageRotation="Rotate270",
+            )
         delivery_address = shipment.delivery_address
         shipping_label_api = ShippingLabelAPI(
             label_request=label_request,
