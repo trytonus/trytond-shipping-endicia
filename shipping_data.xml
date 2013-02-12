@@ -2,182 +2,71 @@
 <tryton>
     <data noupdate="1">
         
-        <record id="party_usps" model="party.party">
-            <field name="name">USPS</field>
-            <field name="code">usps</field>
-        </record>
-        
-        <record id="method_categ_01" model="product.category">
-            <field name="name">Domestic(USPS)</field>
-        </record>
-        
-        <record id="method_categ_02" model="product.category">
-            <field name="name">International(USPS)</field>
-        </record>
-        
-        <record id="ship_method_01" model="product.product">
+        <!-- Methods -->
+        <record id="ship_method_01" model="endicia.mailclass">
             <field name="name">Express Mail</field>
-            <field name="default_uom" ref="product.uom_unit" />
-            <field name="weight_uom" ref="product.uom_ounce" />
-            <field name="code">Express</field>
-            <field name="type">service</field>
-            <field name="category" ref="method_categ_01" />
+            <field name="value">Express</field>
+            <field name="method_type">domestic</field>
         </record>
     
-        <record id="carrier_usps_01" model="carrier">
-            <field name="party" ref="party_usps"/>
-            <field name="carrier_product" ref="ship_method_01"/>
-            <field name="carrier_cost_method">endicia-usps</field>
-        </record>
-        
-        <record id="ship_method_02" model="product.product">
+        <record id="ship_method_02" model="endicia.mailclass">
             <field name="name">First-Class Mail</field>
-            <field name="default_uom" ref="product.uom_unit" />
-            <field name="weight_uom" ref="product.uom_ounce" />
-            <field name="code">First</field>
-            <field name="type">service</field>
-            <field name="category" ref="method_categ_01" />
+            <field name="value">First</field>
+            <field name="method_type">domestic</field>
         </record>
         
-        <record id="carrier_usps_02" model="carrier">
-            <field name="party" ref="party_usps"/>
-            <field name="carrier_product" ref="ship_method_02"/>
-            <field name="carrier_cost_method">endicia-usps</field>
-        </record>
-        
-        <record id="ship_method_03" model="product.product">
+        <record id="ship_method_03" model="endicia.mailclass">
             <field name="name">Library Mail</field>
-            <field name="default_uom" ref="product.uom_unit" />
-            <field name="weight_uom" ref="product.uom_ounce" />
-            <field name="code">LibraryMail</field>
-            <field name="type">service</field>
-            <field name="category" ref="method_categ_01" />
+            <field name="value">LibraryMail</field>
+            <field name="method_type">domestic</field>
         </record>
         
-        <record id="carrier_usps_03" model="carrier">
-            <field name="party" ref="party_usps"/>
-            <field name="carrier_product" ref="ship_method_03"/>
-            <field name="carrier_cost_method">endicia-usps</field>
-        </record>
-        
-        <record id="ship_method_04" model="product.product">
+        <record id="ship_method_04" model="endicia.mailclass">
             <field name="name">Media Mail</field>
-            <field name="default_uom" ref="product.uom_unit" />
-            <field name="weight_uom" ref="product.uom_ounce" />
-            <field name="code">MediaMail</field>
-            <field name="type">service</field>
-            <field name="category" ref="method_categ_01" />
+            <field name="value">MediaMail</field>
+            <field name="method_type">domestic</field>
         </record>
         
-        <record id="carrier_usps_04" model="carrier">
-            <field name="party" ref="party_usps"/>
-            <field name="carrier_product" ref="ship_method_04"/>
-            <field name="carrier_cost_method">endicia-usps</field>
-        </record>
-        
-        <record id="ship_method_05" model="product.product">
+        <record id="ship_method_05" model="endicia.mailclass">
             <field name="name">Parcel Post</field>
-            <field name="default_uom" ref="product.uom_unit" />
-            <field name="weight_uom" ref="product.uom_ounce" />
-            <field name="code">ParcelPost</field>
-            <field name="type">service</field>
-            <field name="category" ref="method_categ_01" />
+            <field name="value">ParcelPost</field>
+            <field name="method_type">domestic</field>
         </record>
         
-        <record id="carrier_usps_05" model="carrier">
-            <field name="party" ref="party_usps"/>
-            <field name="carrier_product" ref="ship_method_05"/>
-            <field name="carrier_cost_method">endicia-usps</field>
-        </record>
-        
-        <record id="ship_method_06" model="product.product">
+        <record id="ship_method_06" model="endicia.mailclass">
             <field name="name">Parcel Select</field>
-            <field name="default_uom" ref="product.uom_unit" />
-            <field name="weight_uom" ref="product.uom_ounce" />
-            <field name="code">ParcelSelect</field>
-            <field name="type">service</field>
-            <field name="category" ref="method_categ_01" />
+            <field name="value">ParcelSelect</field>
+            <field name="method_type">domestic</field>
         </record>
         
-        <record id="carrier_usps_06" model="carrier">
-            <field name="party" ref="party_usps"/>
-            <field name="carrier_product" ref="ship_method_06"/>
-            <field name="carrier_cost_method">endicia-usps</field>
-        </record>
-        
-        <record id="ship_method_07" model="product.product">
+        <record id="ship_method_07" model="endicia.mailclass">
             <field name="name">Priority Mail</field>
-            <field name="default_uom" ref="product.uom_unit" />
-            <field name="weight_uom" ref="product.uom_ounce" />
-            <field name="code">Priority</field>
-            <field name="type">service</field>
-            <field name="category" ref="method_categ_01" />
+            <field name="value">Priority</field>
+            <field name="method_type">domestic</field>
         </record>
         
-        <record id="carrier_usps_07" model="carrier">
-            <field name="party" ref="party_usps"/>
-            <field name="carrier_product" ref="ship_method_07"/>
-            <field name="carrier_cost_method">endicia-usps</field>
-        </record>
-        
-        <record id="ship_method_08" model="product.product">
+        <record id="ship_method_08" model="endicia.mailclass">
             <field name="name">Standard Mail</field>
-            <field name="default_uom" ref="product.uom_unit" />
-            <field name="weight_uom" ref="product.uom_ounce" />
-            <field name="code">StandardMail</field>
-            <field name="type">service</field>
-            <field name="category" ref="method_categ_01" />
+            <field name="value">StandardMail</field>
+            <field name="method_type">domestic</field>
         </record>
         
-        <record id="carrier_usps_08" model="carrier">
-            <field name="party" ref="party_usps"/>
-            <field name="carrier_product" ref="ship_method_08"/>
-            <field name="carrier_cost_method">endicia-usps</field>
-        </record>
-        
-        <record id="ship_method_09" model="product.product">
+        <record id="ship_method_09" model="endicia.mailclass">
             <field name="name">Express Mail International</field>
-            <field name="default_uom" ref="product.uom_unit" />
-            <field name="weight_uom" ref="product.uom_ounce" />
-            <field name="code">ExpressMailInternational</field>
-            <field name="type">service</field>
-            <field name="category" ref="method_categ_02" />
+            <field name="value">ExpressMailInternational</field>
+            <field name="method_type">international</field>
         </record>
         
-        <record id="carrier_usps_09" model="carrier">
-            <field name="party" ref="party_usps"/>
-            <field name="carrier_product" ref="ship_method_09"/>
-            <field name="carrier_cost_method">endicia-usps</field>
-        </record>
-        
-        <record id="ship_method_10" model="product.product">
+        <record id="ship_method_10" model="endicia.mailclass">
             <field name="name">First-Class Mail International</field>
-            <field name="weight_uom" ref="product.uom_ounce" />
-            <field name="default_uom" ref="product.uom_unit" />
-            <field name="code">FirstClassMailInternational</field>
-            <field name="type">service</field>
-            <field name="category" ref="method_categ_02" />
+            <field name="value">FirstClassMailInternational</field>
+            <field name="method_type">international</field>
         </record>
         
-        <record id="carrier_usps_10" model="carrier">
-            <field name="party" ref="party_usps"/>
-            <field name="carrier_product" ref="ship_method_10"/>
-            <field name="carrier_cost_method">endicia-usps</field>
-        </record>
-        
-        <record id="ship_method_11" model="product.product">
+        <record id="ship_method_11" model="endicia.mailclass">
             <field name="name">Priority Mail International</field>
-            <field name="default_uom" ref="product.uom_unit" />
-            <field name="weight_uom" ref="product.uom_ounce" />
-            <field name="code">PriorityMailInternational</field>
-            <field name="type">service</field>
-            <field name="category" ref="method_categ_02" />
-        </record>
-        
-        <record id="carrier_usps_11" model="carrier">
-            <field name="party" ref="party_usps"/>
-            <field name="carrier_product" ref="ship_method_11"/>
-            <field name="carrier_cost_method">endicia-usps</field>
+            <field name="value">PriorityMailInternational</field>
+            <field name="method_type">international</field>
         </record>
 
     </data>
