@@ -8,28 +8,32 @@ Customizes company to have Endicia API Information
 # pylint: disable=E1101
 # pylint: disable=F0401
 from collections import namedtuple
-from trytond.model import ModelView, ModelSQL, fields
-from trytond.transaction import Transaction
+
+from trytond.model import fields
+from trytond.pool import PoolMeta
+
+__all__ = ['Company']
+__metaclass__ = PoolMeta
 
 
-class Company(ModelSQL, ModelView):
+class Company:
     """
-    This will add four fields for account_id, requester_id, pass phrase
-    and is_test.
+    Company
     """
-    _name = 'company.company'
+    __name__ = 'company.company'
 
-    def __init__(self):
-        super(Company, self).__init__()
-        self._error_messages.update({
-            'endicia_credentials_required': 'Please check the account '
-                'settings for Endicia account.\nSome details may be missing.',
+    endicia_account_id = fields.Integer('Account Id')
+    endicia_requester_id = fields.Char('Requester Id')
+    endicia_passphrase = fields.Char('Passphrase')
+    endicia_test = fields.Boolean('Is Test')
+
+    @classmethod
+    def __setup__(cls):
+        super(Company, cls).__setup__()
+        cls._error_messages.update({
+            'endicia_credentials_required': \
+                'Endicia settings on company are incomplete.',
         })
-
-    account_id = fields.Integer('Account Id')
-    requester_id = fields.Char('Requester Id')
-    passphrase = fields.Char('Passphrase')
-    usps_test = fields.Boolean('Is Test')
 
     def get_endicia_credentials(self):
         """
@@ -37,21 +41,19 @@ class Company(ModelSQL, ModelView):
 
         :return: (account_id, requester_id, passphrase, is_test)
         """
-        user_obj = self.pool.get('res.user')
-        user_record = user_obj.browse(Transaction().user)
-        company = self.browse(user_record.company.id)
-
-        if not company.account_id or not company.requester_id or \
-            not company.passphrase:
+        if not all([
+                self.endicia_account_id,
+                self.endicia_requester_id,
+                self.endicia_passphrase
+            ]):
             self.raise_user_error('endicia_credentials_required')
+
         EndiciaSettings = namedtuple('EndiciaSettings', [
             'account_id', 'requester_id', 'passphrase', 'usps_test'
-            ])
+        ])
         return EndiciaSettings(
-            company.account_id,
-            company.requester_id,
-            company.passphrase,
-            company.usps_test,
-            )
-
-Company()
+            self.endicia_account_id,
+            self.endicia_requester_id,
+            self.endicia_passphrase,
+            self.endicia_test,
+        )

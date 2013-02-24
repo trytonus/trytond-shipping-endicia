@@ -2,31 +2,90 @@
 <tryton>
     <data>
 
-        <record model="ir.ui.view" id="inherit_shipment_make_wizard_view_form">
-            <field name="model">shipment.make.wizard.view</field>
+        <record model="ir.ui.view" id="shipment_view_form">
+            <field name="model">stock.shipment.out</field>
             <field name="type">form</field>
-            <field name="inherit" 
-                ref="shipping.shipment_make_wizard_view_form"/>
+            <field name="inherit" ref="stock.shipment_out_view_form"/>
             <field name="arch" type="xml">
                 <![CDATA[
                 <data>
-                    <xpath expr="/form/group/label[@name=&quot;response&quot;]"
-                        position="before">
-                        <label name="label_sub_type"/>
-                        <field name="label_sub_type"/>
-                        <label name="integrated_form_type"/>
-                        <field name="integrated_form_type"/>
-                        <label name="include_postage"/>
-                        <field name="include_postage"/>
+                    <xpath expr="//field[@name=&quot;carrier&quot;]" position="after">
+                        <group col="6" colspan="2" id="group_checkboxes">
+                            <label name="tracking_number"/>
+                            <field name="tracking_number"/>
+                        </group>
+                    </xpath>
+                    <xpath expr="/form/notebook/page[@id=&quot;outgoing_moves&quot;]"
+                        position="after">
+                        <page string="USPS [Endicia]"
+                              states="{'invisible': Not(Bool(Eval('is_endicia_shipping')))}"
+                            id="endicia">
+                            <label name="is_endicia_shipping"/>
+                            <field name="is_endicia_shipping"/>
+                            <label name="endicia_mailclass"/>
+                            <field name="endicia_mailclass"/>
+                            <label name="endicia_label_subtype"/>
+                            <field name="endicia_label_subtype"/>
+                            <label name="endicia_integrated_form_type"/>
+                            <field name="endicia_integrated_form_type"/>
+                            <label name="endicia_package_type"/>
+                            <field name="endicia_package_type"/>
+                            <label name="endicia_include_postage"/>
+                            <field name="endicia_include_postage"/>
+                            <label name="endicia_refunded"/>
+                            <field name="endicia_refunded"/>
+                        </page>
                     </xpath>
                 </data>
                 ]]>
             </field>
         </record>
-        
-        <!-- Refund Request Wizard -->
-        <record model="ir.ui.view" id="shipment_refund_wizard_view_form">
-            <field name="model">shipment.refund.wizard.view</field>
+
+        <!-- Generate Labels -->
+        <record model="ir.action.wizard" id="wizard_generate_endicia_label">
+            <field name="name">Generate USPS [Endicia] Label</field>
+            <field name="wiz_name">generate.endicia.label</field>
+            <field name="model">stock.shipment.out</field>
+        </record>
+
+        <record model="ir.action.keyword" id="act_wizard_generate_endicia_labels">
+            <field name="keyword">form_action</field>
+            <field name="model">stock.shipment.out,-1</field>
+            <field name="action" ref="wizard_generate_endicia_label"/>
+        </record>
+
+        <record model="ir.ui.view" id="generate_endicia_label_message_view_form">
+            <field name="model">generate.endicia.label.message</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <![CDATA[
+                <form string="USPS Labels Generated via Endicia" col="2">
+                    <image name="tryton-attachment" xexpand="0" xfill="0"/>
+                    <label string="Shipment labels have been generated via USPS [Endicia] and save as attachments for the shipment"
+                        id="endicia_labels_generate"/>
+                    <newline/>
+                    <label name="tracking_number"/>
+                    <field name="tracking_number"/>
+                </form>
+                ]]>
+            </field>
+        </record>
+
+        <!-- Request Refund -->
+        <record model="ir.action.wizard" id="wizard_request_refund">
+            <field name="name">Request Endicia Refund</field>
+            <field name="wiz_name">endicia.refund.wizard</field>
+            <field name="model">stock.shipment.out</field>
+        </record>
+
+        <record model="ir.action.keyword" id="act_wizard_request_refund">
+            <field name="keyword">form_action</field>
+            <field name="model">stock.shipment.out,-1</field>
+            <field name="action" ref="wizard_request_refund"/>
+        </record>
+
+        <record model="ir.ui.view" id="endicia_refund_wizard_view_form">
+            <field name="model">endicia.refund.wizard.view</field>
             <field name="type">form</field>
             <field name="arch" type="xml">
                 <![CDATA[
@@ -41,20 +100,21 @@
             </field>
         </record>
 
-        <record model="ir.action.wizard" id="action_shipment_refund_wizard">
-            <field name="name">Request Refund</field>
-            <field name="wiz_name">shipment.refund.wizard</field>
-            <field name="model">shipment.record</field>
+        <!-- Make SCAN Form -->
+        <record model="ir.action.wizard" id="wizard_make_scanform">
+            <field name="name">Make Endicia SCAN Form</field>
+            <field name="wiz_name">endicia.scanform.wizard</field>
+            <field name="model">stock.shipment.out</field>
         </record>
-        <record model="ir.action.keyword" id="shipment_refund_wizard_keyword">
+
+        <record model="ir.action.keyword" id="act_wizard_make_scanform">
             <field name="keyword">form_action</field>
-            <field name="model">shipment.record,0</field>
-            <field name="action" ref="action_shipment_refund_wizard"/>
+            <field name="model">stock.shipment.out,-1</field>
+            <field name="action" ref="wizard_make_scanform"/>
         </record>
-        
-        <!-- Make SCAN Form Wizard -->
-        <record model="ir.ui.view" id="shipment_scanform_wizard_view_form">
-            <field name="model">shipment.scanform.wizard.view</field>
+
+        <record model="ir.ui.view" id="endicia_scanform_wizard_view_form">
+            <field name="model">endicia.scanform.wizard.view</field>
             <field name="type">form</field>
             <field name="arch" type="xml">
                 <![CDATA[
@@ -67,19 +127,8 @@
             </field>
         </record>
 
-        <record model="ir.action.wizard" id="action_shipment_scanform_wizard">
-            <field name="name">Make SCAN Form</field>
-            <field name="wiz_name">shipment.scanform.wizard</field>
-            <field name="model">shipment.record</field>
-        </record>
-        <record model="ir.action.keyword" id="shipment_scanform_wizard_keyword">
-            <field name="keyword">form_action</field>
-            <field name="model">shipment.record,0</field>
-            <field name="action" ref="action_shipment_scanform_wizard"/>
-        </record>
-
         <!-- Buy Postage Wizard -->
-        <record model="ir.ui.view" id="buy_postage_wizard_view_form">
+        <record model="ir.ui.view" id="endicia_buy_postage_wizard_view_form">
             <field name="model">buy.postage.wizard.view</field>
             <field name="type">form</field>
             <field name="arch" type="xml">
@@ -102,10 +151,9 @@
             <field name="wiz_name">buy.postage.wizard</field>
         </record>
         <menuitem name="Buy USPS Postage"
-            parent="shipping.menu_stock_shipment"
+            parent="stock.menu_configuration"
             action="action_buy_postage_wizard"
-            id="menu_buy_postage_wizard"
-            sequence="10"/>
+            id="menu_buy_postage_wizard" />
 
     </data>
 </tryton>

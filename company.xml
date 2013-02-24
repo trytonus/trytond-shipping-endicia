@@ -9,18 +9,18 @@
                 <![CDATA[
                 <data>
                     <xpath expr="/form/notebook" position="inside">
-                        <page string="Configuration" id="configuration">
+                        <page string="Endicia Configuration" id="endicia_configuration">
                             <separator string="Endicia Settings" colspan="4" 
                                 id="endicia_settings"/>
                             <newline/>
-                            <label name="account_id" />
-                            <field name="account_id" />
-                            <label name="requester_id" />
-                            <field name="requester_id" />
-                            <label name="passphrase" />
-                            <field name="passphrase" />
-                            <label name="usps_test" />
-                            <field name="usps_test" />
+                            <label name="endicia_account_id" />
+                            <field name="endicia_account_id" />
+                            <label name="endicia_requester_id" />
+                            <field name="endicia_requester_id" />
+                            <label name="endicia_passphrase" />
+                            <field name="endicia_passphrase" />
+                            <label name="endicia_test" />
+                            <field name="endicia_test" />
                         </page>
                     </xpath>
                 </data>

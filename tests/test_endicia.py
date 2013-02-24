@@ -1,11 +1,17 @@
-#!/usr/bin/env python
-#This file is part of Tryton.  The COPYRIGHT file at the top level of
-#this repository contains the full copyright notices and license terms.
-from __future__ import with_statement
-import datetime
-from decimal import Decimal
+# -*- coding: utf-8 -*-
+"""
+    test_endicia
 
-import sys, os
+    Test USPS Integration via Endicia.
+
+    :copyright: (c) 2013 by Openlabs Technologies & Consulting (P) Limited
+    :license: GPLv3, see LICENSE for more details.
+"""
+from decimal import Decimal
+from time import time
+
+import sys
+import os
 DIR = os.path.abspath(os.path.normpath(os.path.join(__file__,
     '..', '..', '..', '..', '..', 'trytond')))
 if os.path.isdir(DIR):
@@ -13,323 +19,278 @@ if os.path.isdir(DIR):
 
 import unittest
 import trytond.tests.test_tryton
-from trytond.tests.test_tryton import POOL, DB_NAME, USER, CONTEXT
+from trytond.tests.test_tryton import POOL, DB_NAME, USER, CONTEXT, \
+    test_view, test_depends
 from trytond.transaction import Transaction
+from trytond.config import CONFIG
+CONFIG['data_path'] = '.'
 
 
-class EndiciaTestCase(unittest.TestCase):
-    """
-    Test Endicia Integration Module
+class TestUSPSEndicia(unittest.TestCase):
+    """Test USPS with Endicia.
     """
 
     def setUp(self):
         trytond.tests.test_tryton.install_module('endicia_integration')
+        self.sale = POOL.get('sale.sale')
+        self.sale_config = POOL.get('sale.configuration')
+        self.endicia_mailclass = POOL.get('endicia.mailclass')
+        self.product = POOL.get('product.product')
+        self.uom = POOL.get('product.uom')
+        self.account = POOL.get('account.account')
+        self.category = POOL.get('product.category')
+        self.carrier = POOL.get('carrier')
+        self.party = POOL.get('party.party')
+        self.party_contact = POOL.get('party.contact_mechanism')
+        self.payment_term = POOL.get('account.invoice.payment_term')
+        self.country = POOL.get('country.country')
+        self.country_subdivision = POOL.get('country.subdivision')
+        self.sale = POOL.get('sale.sale')
+        self.party_address = POOL.get('party.address')
+        self.stock_location = POOL.get('stock.location')
+        self.stock_shipment_out = POOL.get('stock.shipment.out')
         self.currency = POOL.get('currency.currency')
         self.company = POOL.get('company.company')
-        self.product = POOL.get('product.product')
-        self.category = POOL.get('product.category')
-        self.uom = POOL.get('product.uom')
-        self.shipment = POOL.get('stock.shipment.out')
-        self.party = POOL.get('party.party')
-        self.address = POOL.get('party.address')
-        self.country = POOL.get('country.country')
-        self.subdivision = POOL.get('country.subdivision')
-        self.contact_mech = POOL.get('party.contact_mechanism')
-        self.user = POOL.get('res.user')
-        self.stock_location = POOL.get('stock.location')
-        self.move = POOL.get('stock.move')
-        self.ship_estimate_wiz_obj = POOL.get('shipment.estimate.wizard', 
-            type='wizard')
-        self.ship_make_wiz_obj = POOL.get('shipment.make.wizard', 
-            type='wizard')
-        self.carrier = POOL.get('carrier')
-        self.attachment = POOL.get('ir.attachment')
+        self.ir_attachment = POOL.get('ir.attachment')
 
-    def test_0010_estimate_cost(self):
-        """Estimate the cost for a shipment
+    def test0005views(self):
+        '''
+        Test views.
+        '''
+        test_view('endicia_integration')
+
+    def test0006depends(self):
+        '''
+        Test depends.
+        '''
+        test_depends()
+
+    def setup_defaults(self):
+        """Method to setup defaults
         """
-        with Transaction().start(DB_NAME, USER, CONTEXT) as transaction:
-            currency = self.currency.create({
-                'name': 'US Dollar',
-                'symbol': 'USD',
-                'code': 'USD',
-                })
-            sender = self.party.create({
-                'name': 'Openlabs'
-                })
-            company_id = self.company.create({
-                'party': sender,
-                'currency': currency,
-                'account_id': 123456,
-                'requester_id': 123456,
-                'passphrase': 'PassPhrase',
-                'usps_test': True,
-                })
-            company = self.company.browse(company_id)
-            self.user.write(USER, {'main_company': company_id})
-            self.user.write(USER, {'company': company_id})
-            party_id = self.party.create({
-                'name': 'Party 1',
-                })
-            country_id = self.country.create({
-                'name': 'United States',
-                'code': 'US',
-                })
-            from_state_id = self.subdivision.create({
-                'name': 'Idaho',
-                'code': 'ID',
-                'country': country_id,
-                'type': 'state',
-                })
-            to_state_id = self.subdivision.create({
-                'name': 'California',
-                'code': 'CA',
-                'country': country_id,
-                'type': 'state',
-                })
-            from_phone_id = self.contact_mech.create({
-                'type': 'phone',
-                'other_value': '8005551212',
-                'party': company.party.id,
-                })
-            to_phone_id = self.contact_mech.create({
-                'type': 'phone',
-                'other_value': '8005763279',
-                'party': party_id,
-                })
-            from_address_id = self.address.create({
-                'party': company.party.id,
-                'name': 'John Doe',
-                'street': '123 Main Street',
-                'city': 'Boise',
-                'subdivision': from_state_id,
-                'country': country_id,
-                'zip': '83702',
-                })
-            to_address_id = self.address.create({
-                'party': party_id,
-                'name': 'Shalabh Aggarwal',
-                'street': '250 High Street',
-                'city': 'Palo Alto',
-                'subdivision': to_state_id,
-                'country': country_id,
-                'zip': '84301',
-                })
-            category_id = self.category.create({
-                'name': 'Category1',
-                })
-            kg_id, = self.uom.search([('name', '=', 'Kilogram')])
-            oz_id, = self.uom.search([('symbol', '=', 'oz')])
-            product_id = self.product.create({
-                'name': 'Product1',
-                'type': 'stockable',
-                'category': category_id,
-                'list_price': Decimal('20.0'),
-                'cost_price_method': 'fixed',
-                'default_uom': kg_id,
-                'weight': Decimal('10.0'),
-                'weight_uom': oz_id,
-                })
-            warehouse_id, = self.stock_location.search([
-                ('code', '=', 'WH')
-                ], limit=1)
-            warehouse = self.stock_location.browse(warehouse_id)
-            self.stock_location.write(warehouse_id, {
-                'address': from_address_id,
-                })
-            customer_id, = self.stock_location.search([('code', '=', 'CUS')])
-            storage_id, = self.stock_location.search([('code', '=', 'STO')])
+        # Create currency
+        currency = self.currency.create({
+            'name': 'United Stated Dollar',
+            'code': 'USD',
+            'symbol': 'USD',
+        })
+        currency_alt = self.currency.create({
+            'name': 'Indian Rupee',
+            'code': 'INR',
+            'symbol': 'INR',
+        })
 
-            today = datetime.date.today()
-            currency_id = self.company.read(company.id,
-                    ['currency'])['currency']
-            move_id = self.move.create({
-                'product': product_id,
-                'uom': kg_id,
-                'quantity': 2,
-                'from_location': storage_id,
-                'to_location': customer_id,
-                'planned_date': today,
-                'state': 'draft',
-                'company': company.id,
-                'unit_price': Decimal('1'),
-                'currency': currency_id,
-                'from_location': warehouse.output_location.id
-                })
+        company, = self.company.search([
+            ('name', '=', 'B2CK')
+        ])
 
-            shipment_id = self.shipment.create({
-                'planned_date': today,
-                'customer': party_id,
-                'delivery_address': to_address_id,
-                'warehouse': warehouse_id,
-                'moves': [('add', [move_id])],
-                })
-            self.shipment.set_outgoing_moves([shipment_id], 'outgoing_moves', 
-                [('add', [move_id])])
-            carrier_id, = self.carrier.search(
-                [('carrier_product.code', '=', 'Priority')], limit=1)
-            ship_estimate = self.ship_estimate_wiz_obj.create()
-            rv = self.ship_estimate_wiz_obj.execute(ship_estimate, {
-                'form': {
-                    'carrier': carrier_id,
-                    },
-                'id': shipment_id,
-                    },
-                'get_estimate')
-            self.assertTrue(rv.get('datas').get('amount'))
+        # Endicia Configuration
+        self.company.write([company], {
+            'currency': currency.id,
+            'endicia_account_id': '123456',
+            'endicia_requester_id': '123456',
+            'endicia_passphrase': 'PassPhrase',
+            'endicia_test': True,
+        })
+        company_phone = self.party_contact.create({
+            'type': 'phone',
+            'value': '8005551212',
+            'party': company.party.id
+        })
 
-    def test_0020_make_shipment(self):
-        """Complete a shipment and store label
+        # Sale configuration
+        endicia_mailclass, = self.endicia_mailclass.search([
+            ('value', '=', 'First')
+        ])
+
+        self.sale_config.write(1, {
+            'endicia_label_subtype': 'Integrated',
+            'endicia_integrated_form_type': 'Form2976',
+            'endicia_mailclass': endicia_mailclass.id,
+            'endicia_include_postage':  True,
+        })
+
+        account_revenue, = self.account.search([
+            ('kind', '=', 'revenue')
+        ])
+
+        # Create product category
+        category = self.category.create({
+            'name': 'Test Category',
+        })
+
+        uom_kg, = self.uom.search([('symbol', '=', 'kg')])
+        uom_pound, = self.uom.search([('symbol', '=', 'lbs')])
+
+        # Carrier Carrier Product
+        carrier_product = self.product.create({
+            'name': 'Test Carrier Product',
+            'category': category.id,
+            'type': 'service',
+            'salable': True,
+            'sale_uom': uom_kg,
+            'list_price': Decimal('10'),
+            'cost_price': Decimal('5'),
+            'default_uom': uom_kg,
+            'cost_price_method': 'fixed',
+            'account_revenue': account_revenue.id,
+        })
+
+        # Create product
+        product = self.product.create({
+            'name': 'Test Product',
+            'category': category.id,
+            'type': 'goods',
+            'salable': True,
+            'sale_uom': uom_kg,
+            'list_price': Decimal('10'),
+            'cost_price': Decimal('5'),
+            'default_uom': uom_kg,
+            'account_revenue': account_revenue.id,
+            'weight': 0.5,
+            'weight_uom': uom_pound.id,
+        })
+
+        # Create party
+        carrier_party = self.party.create({
+            'name': 'Test Party',
+        })
+
+        carrier = self.carrier.create({
+            'party': carrier_party.id,
+            'carrier_product': carrier_product.id,
+            'carrier_cost_method': 'endicia',
+        })
+
+        payment_term = self.payment_term.create({
+            'name': 'Cash',
+        })
+
+        country_us = self.country.create({
+            'name': 'United States',
+            'code': 'US',
+        })
+
+        subdivision_idaho = self.country_subdivision.create({
+            'name': 'Idaho',
+            'code': 'US-ID',
+            'country': country_us.id,
+            'type': 'state'
+        })
+
+        subdivision_california = self.country_subdivision.create({
+            'name': 'California',
+            'code': 'US-CA',
+            'country': country_us.id,
+            'type': 'state'
+        })
+        company_address = self.party_address.create({
+            'name': 'Amine Khechfe',
+            'street': '247 High Street',
+            'zip': '84301',
+            'city': 'Palo Alto',
+            'country': country_us.id,
+            'subdivision': subdivision_california.id,
+            'party': company.party.id,
+        })
+
+        sale_party = self.party.create({
+            'name': 'Test Sale Party',
+        })
+        sale_party_phone = self.party_contact.create({
+            'type': 'phone',
+            'value': '8005763279',
+            'party': sale_party.id
+        })
+
+        sale_address = self.party_address.create({
+            'name': 'John Doe',
+            'street': '123 Main Street',
+            'zip': '83702',
+            'city': 'Boise',
+            'country': country_us.id,
+            'subdivision': subdivision_idaho.id,
+            'party': sale_party,
+        })
+
+        # Create sale order
+        sale = self.sale.create({
+            'reference': 'S-1001',
+            'payment_term': payment_term,
+            'party': sale_party.id,
+            'invoice_address': sale_address.id,
+            'shipment_address': sale_address.id,
+            'carrier': carrier.id,
+            'lines': [
+                ('create', {
+                    'type': 'line',
+                    'quantity': 1,
+                    'product': product,
+                    'unit_price': Decimal('10.00'),
+                    'description': 'Test Description1',
+                    'unit': uom_kg,
+                }),
+            ]
+        })
+
+        self.stock_location.write([sale.warehouse], {
+            'address': company_address.id,
+        })
+
+        # Confirm and process sale order
+        self.assertEqual(len(sale.lines), 1)
+        self.sale.quote([sale])
+        self.assertEqual(len(sale.lines), 2)
+        self.sale.confirm([sale])
+        self.sale.process([sale])
+
+    def test_0010_generate_endicia_gss_labels(self):
+        """Test case to generate Endicia labels.
         """
-        with Transaction().start(DB_NAME, USER, CONTEXT) as transaction:
-            currency = self.currency.create({
-                'name': 'US Dollar',
-                'symbol': 'USD',
-                'code': 'USD',
-                })
-            sender = self.party.create({
-                'name': 'Openlabs'
-                })
-            company_id = self.company.create({
-                'party': sender,
-                'currency': currency,
-                'account_id': 123456,
-                'requester_id': 123456,
-                'passphrase': 'PassPhrase',
-                'usps_test': True,
-                })
-            company = self.company.browse(company_id)
-            self.user.write(USER, {'main_company': company_id})
-            self.user.write(USER, {'company': company_id})
-            party_id = self.party.create({
-                'name': 'Party 1',
-                })
-            country_id = self.country.create({
-                'name': 'United States',
-                'code': 'US',
-                })
-            from_state_id = self.subdivision.create({
-                'name': 'Idaho',
-                'code': 'US-ID',
-                'country': country_id,
-                'type': 'state',
-                })
-            to_state_id = self.subdivision.create({
-                'name': 'California',
-                'code': 'US-CA',
-                'country': country_id,
-                'type': 'state',
-                })
-            from_phone_id = self.contact_mech.create({
-                'type': 'phone',
-                'other_value': '8005551212',
-                'party': company.party.id,
-                })
-            to_phone_id = self.contact_mech.create({
-                'type': 'phone',
-                'other_value': '8005763279',
-                'party': party_id,
-                })
-            from_address_id = self.address.create({
-                'party': company.party.id,
-                'name': 'John Doe',
-                'street': '123 Main Street',
-                'city': 'Boise',
-                'subdivision': from_state_id,
-                'country': country_id,
-                'zip': '83702',
-                })
-            to_address_id = self.address.create({
-                'party': party_id,
-                'name': 'Shalabh Aggarwal',
-                'street': '250 High Street',
-                'city': 'Palo Alto',
-                'subdivision': to_state_id,
-                'country': country_id,
-                'zip': '84301',
-                })
-            category_id = self.category.create({
-                'name': 'Category1',
-                })
-            kg_id, = self.uom.search([('name', '=', 'Kilogram')])
-            oz_id, = self.uom.search([('symbol', '=', 'oz')])
-            product_id = self.product.create({
-                'name': 'Product1',
-                'type': 'stockable',
-                'category': category_id,
-                'list_price': Decimal('20.0'),
-                'cost_price_method': 'fixed',
-                'default_uom': kg_id,
-                'weight': Decimal('5.0'),
-                'weight_uom': oz_id,
-                })
-            warehouse_id, = self.stock_location.search([
-                ('code', '=', 'WH')
-                ], limit=1)
-            warehouse = self.stock_location.browse(warehouse_id)
-            self.stock_location.write(warehouse_id, {
-                'address': from_address_id,
-                })
-            customer_id, = self.stock_location.search([('code', '=', 'CUS')])
-            storage_id, = self.stock_location.search([('code', '=', 'STO')])
+        with Transaction().start(DB_NAME, USER, context=CONTEXT):
 
-            today = datetime.date.today()
-            currency_id = self.company.read(company.id,
-                    ['currency'])['currency']
-            move_id = self.move.create({
-                'product': product_id,
-                'uom': kg_id,
-                'quantity': 2,
-                'from_location': storage_id,
-                'to_location': customer_id,
-                'planned_date': today,
-                'state': 'draft',
-                'company': company.id,
-                'unit_price': Decimal('1'),
-                'currency': currency_id,
-                'from_location': warehouse.output_location.id
-                })
+            # Call method to create sale order
+            self.setup_defaults()
 
-            shipment_id = self.shipment.create({
-                'planned_date': today,
-                'customer': party_id,
-                'delivery_address': to_address_id,
-                'warehouse': warehouse_id,
-                'moves': [('add', [move_id])],
-                })
-            self.shipment.set_outgoing_moves([shipment_id], 'outgoing_moves', 
-                [('add', [move_id])])
-            carrier_id, = self.carrier.search(
-                [('carrier_product.code', '=', 'First')], limit=1)
-            ship_make = self.ship_make_wiz_obj.create()
+            shipment, = self.stock_shipment_out.search([])
+            self.stock_shipment_out.write([shipment], {
+                'code': str(int(time())),
+            })
 
-            # Storing the number of attachents before the label is generated
-            attachments0 = self.attachment.search([])
+            # Before generating labels
+            # There is no tracking number generated
+            # And no attachment cerated for labels
+            self.assertFalse(shipment.tracking_number)
+            attatchment = self.ir_attachment.search([])
+            self.assertEqual(len(attatchment), 0)
 
-            rv = self.ship_make_wiz_obj.execute(ship_make, {
-                'form': {
-                    'carrier': carrier_id,
-                    'label_sub_type': 'None',
-                    'integrated_form_type': 'Form2976',
-                    'include_postage': True,
-                    },
-                'id': shipment_id,
-                    },
-                'make_shipment')
-            self.assertEqual(rv.get('datas').get('response'), 'Success')
+            # Make shipment in packed state.
+            shipment.assign([shipment])
+            shipment.pack([shipment])
 
-            # Storing the number of attachents after the label is generated
-            attachments1 = self.attachment.search([])
+            # Call method to generate labels.
+            shipment.make_endicia_labels()
 
-            # Asserting that the number of attachments after the label is 
-            # generated is 1 more than it was before.
-            self.assertEqual(len(attachments1), len(attachments0)+1)
+            self.assertTrue(shipment.tracking_number)
+            self.assertGreater(len(
+                self.ir_attachment.search([
+                    ('resource', '=', 'stock.shipment.out,%s' % shipment.id)
+                ])
+            ), 0)
+
+    #TODO: Add more tests for wizards and other operations
 
 
 def suite():
     suite = trytond.tests.test_tryton.suite()
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(EndiciaTestCase))
+    from trytond.modules.account.tests import test_account
+    for test in test_account.suite():
+        if test not in suite:
+            suite.addTest(test)
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(
+        TestUSPSEndicia))
     return suite
 
 if __name__ == '__main__':
     unittest.TextTestRunner(verbosity=2).run(suite())
+
