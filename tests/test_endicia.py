@@ -272,11 +272,11 @@ class TestUSPSEndicia(unittest.TestCase):
             shipment.make_endicia_labels()
 
             self.assertTrue(shipment.tracking_number)
-            self.assertGreater(len(
+            self.assertTrue(len(
                 self.ir_attachment.search([
                     ('resource', '=', 'stock.shipment.out,%s' % shipment.id)
                 ])
-            ), 0)
+            ) > 0)
 
     #TODO: Add more tests for wizards and other operations
 
