@@ -122,14 +122,20 @@ class Sale:
     def apply_endicia_shipping(self):
         "Add a shipping line to sale for endicia"
         Sale = Pool().get('sale.sale')
+        Currency = Pool().get('currency.currency')
 
         if self.carrier and self.carrier.carrier_cost_method == 'endicia':
             if not self.endicia_mailclass:
                 self.raise_user_error('mailclass_missing')
             with Transaction().set_context(self._get_carrier_context()):
-                shipment_cost = self.carrier.get_sale_price()
-                if not shipment_cost[0]:
+                shipment_cost_usd = self.carrier.get_sale_price()
+                if not shipment_cost_usd[0]:
                     return
+            # Convert the shipping cost to sale currency from USD
+            usd, = Currency.search([('code', '=', 'USD')])
+            shipment_cost = Currency.compute(
+                usd, shipment_cost_usd[0], self.currency
+            )
             Sale.write([self], {
                 'lines': [
                     ('create', {
@@ -138,14 +144,16 @@ class Sale:
                         'description': self.endicia_mailclass.name,
                         'quantity': 1,  # XXX
                         'unit': self.carrier.carrier_product.sale_uom.id,
-                        'unit_price': Decimal(shipment_cost[0]),
-                        'shipment_cost': Decimal(shipment_cost[0]),
-                        'amount': Decimal(shipment_cost[0]),
+                        'unit_price': Decimal(shipment_cost),
+                        'shipment_cost': Decimal(shipment_cost),
+                        'amount': Decimal(shipment_cost),
                         'taxes': [],
                         'sequence': 9999,  # XXX
                     }),
                     ('delete', map(
-                        int, [line for line in self.lines if line.shipment_cost]
+                        int, [
+                            line for line in self.lines if line.shipment_cost
+                        ]
                     ),
                 )]
             })
