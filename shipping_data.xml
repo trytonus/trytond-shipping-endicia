@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <tryton>
-    <data noupdate="1">
+    <data>
         
         <record id="party_usps" model="party.party">
             <field name="name">USPS</field>
@@ -76,10 +76,10 @@
         </record>
         
         <record id="ship_method_05" model="product.product">
-            <field name="name">Parcel Post</field>
+            <field name="name">Standard Post (formerly called Parcel Post)</field>
             <field name="default_uom" ref="product.uom_unit" />
             <field name="weight_uom" ref="product.uom_ounce" />
-            <field name="code">ParcelPost</field>
+            <field name="code">StandardPost</field>
             <field name="type">service</field>
             <field name="category" ref="method_categ_01" />
         </record>
@@ -177,6 +177,21 @@
         <record id="carrier_usps_11" model="carrier">
             <field name="party" ref="party_usps"/>
             <field name="carrier_product" ref="ship_method_11"/>
+            <field name="carrier_cost_method">endicia-usps</field>
+        </record>
+
+        <record id="ship_method_12" model="product.product">
+            <field name="name">First Class Package International Service</field>
+            <field name="default_uom" ref="product.uom_unit" />
+            <field name="weight_uom" ref="product.uom_ounce" />
+            <field name="code">FirstClassPackageInternationalService</field>
+            <field name="type">service</field>
+            <field name="category" ref="method_categ_02" />
+        </record>
+
+        <record id="carrier_usps_12" model="carrier">
+            <field name="party" ref="party_usps"/>
+            <field name="carrier_product" ref="ship_method_12"/>
             <field name="carrier_cost_method">endicia-usps</field>
         </record>
 
