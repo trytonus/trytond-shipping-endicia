@@ -21,6 +21,7 @@ from trytond.wizard import Wizard, StateTransition, StateView, Button
 from trytond.transaction import Transaction
 from trytond.pool import Pool, PoolMeta
 from trytond.pyson import Eval
+from trytond.rpc import RPC
 
 from .sale import ENDICIA_PACKAGE_TYPES
 
@@ -117,6 +118,10 @@ class ShipmentOut:
             'mailclass_missing': 'Select a mailclass to ship using Endicia ' \
                 '[USPS].',
             'error_label': 'Error in generating label "%s"',
+        })
+        cls.__rpc__.update({
+            'make_endicia_labels': RPC(readonly=False, instantiate=0),
+            'get_endicia_shipping_cost': RPC(readonly=False, instantiate=0),
         })
 
     def on_change_carrier(self):
