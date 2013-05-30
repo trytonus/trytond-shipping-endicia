@@ -118,6 +118,11 @@ class ShipmentOut:
             'mailclass_missing': 'Select a mailclass to ship using Endicia ' \
                 '[USPS].',
             'error_label': 'Error in generating label "%s"',
+            'tracking_number_already_present': \
+                'Tracking Number is already present for this shipment.',
+            'invalid_state': 'Labels can only be generated when the '\
+                'shipment is in Packed or Done states only',
+            'wrong_carrier': 'Carrier for selected shipment is not Endicia',
         })
         cls.__rpc__.update({
             'make_endicia_labels': RPC(readonly=False, instantiate=0),
@@ -198,6 +203,15 @@ class ShipmentOut:
         Company = Pool().get('company.company')
         PartyAddress = Pool().get('party.address')
         Attachment = Pool().get('ir.attachment')
+
+        if self.state not in ('packed', 'done'):
+            self.raise_user_error('invalid_state')
+
+        if not self.carrier.carrier_cost_method == 'endicia':
+            self.raise_user_error('wrong_carrier')
+
+        if self.tracking_number:
+            self.raise_user_error('tracking_number_already_present')
 
         company = Transaction().context.get('company')
         endicia_credentials = Company(company).get_endicia_credentials()
@@ -330,17 +344,6 @@ class GenerateEndiciaLabel(Wizard):
         ]
     )
 
-    @classmethod
-    def __setup__(self):
-        super(GenerateEndiciaLabel, self).__setup__()
-        self._error_messages.update({
-            'tracking_number_already_present': \
-                'Tracking Number is already present for this shipment.',
-            'invalid_state': 'Labels can only be generated when the '\
-                'shipment is in Packed or Done states only',
-            'wrong_carrier': 'Carrier for selected shipment is not Endicia'
-            })
-
     def default_start(self, data):
         Shipment = Pool().get('stock.shipment.out')
 
@@ -350,15 +353,6 @@ class GenerateEndiciaLabel(Wizard):
             self.raise_user_error(
                 'This wizard can be called for only one shipment at a time'
             )
-
-        if not shipment.carrier.carrier_cost_method == 'endicia':
-            self.raise_user_error('wrong_carrier')
-
-        if shipment.state not in ('packed', 'done'):
-            self.raise_user_error('invalid_state')
-
-        if shipment.tracking_number:
-            self.raise_user_error('tracking_number_already_present')
 
         tracking_number = shipment.make_endicia_labels()
 
