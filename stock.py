@@ -351,7 +351,7 @@ class GenerateEndiciaLabel(Wizard):
 
         tracking_number = shipment.make_endicia_labels()
 
-        return {'tracking_number': tracking_number}
+        return {'tracking_number': str(tracking_number)}
 
 
 class EndiciaRefundRequestWizardView(ModelView):
