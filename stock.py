@@ -2,8 +2,6 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 
-# pylint: disable=E1101
-# pylint: disable=F0401
 '''
 Inherit stock for endicia API
 '''
@@ -17,7 +15,7 @@ from endicia.tools import objectify_response, get_images
 from endicia.exceptions import RequestError
 
 from trytond.model import ModelView, fields
-from trytond.wizard import Wizard, StateTransition, StateView, Button
+from trytond.wizard import Wizard, StateView, Button
 from trytond.transaction import Transaction
 from trytond.pool import Pool, PoolMeta
 from trytond.pyson import Eval
@@ -48,22 +46,19 @@ class ShipmentOut:
         ('None', 'None'),
         ('Integrated', 'Integrated')
     ], 'Label Subtype', states={
-            'readonly': ~Eval('state').in_(['packed', 'done']),
-        }, depends=['state']
-    )
+        'readonly': ~Eval('state').in_(['packed', 'done']),
+    }, depends=['state'])
     endicia_integrated_form_type = fields.Selection([
         ('Form2976', 'Form2976(Same as CN22)'),
         ('Form2976A', 'Form2976(Same as CP72)'),
     ], 'Integrated Form Type', states={
-            'readonly': ~Eval('state').in_(['packed', 'done']),
-        }, depends=['state']
-    )
+        'readonly': ~Eval('state').in_(['packed', 'done']),
+    }, depends=['state'])
     endicia_include_postage = fields.Boolean('Include Postage ?', states={
-            'readonly': ~Eval('state').in_(['packed', 'done']),
-        }, depends=['state']
-    )
+        'readonly': ~Eval('state').in_(['packed', 'done']),
+    }, depends=['state'])
     endicia_package_type = fields.Selection(
-        ENDICIA_PACKAGE_TYPES, 'Package Content Type' , states={
+        ENDICIA_PACKAGE_TYPES, 'Package Content Type', states={
             'readonly': ~Eval('state').in_(['packed', 'done']),
         }, depends=['state']
     )
@@ -115,12 +110,12 @@ class ShipmentOut:
         }
         cls._error_messages.update({
             'warehouse_address_required': 'Warehouse address is required.',
-            'mailclass_missing': 'Select a mailclass to ship using Endicia ' \
-                '[USPS].',
+            'mailclass_missing':
+                'Select a mailclass to ship using Endicia [USPS].',
             'error_label': 'Error in generating label "%s"',
-            'tracking_number_already_present': \
+            'tracking_number_already_present':
                 'Tracking Number is already present for this shipment.',
-            'invalid_state': 'Labels can only be generated when the '\
+            'invalid_state': 'Labels can only be generated when the '
                 'shipment is in Packed or Done states only',
             'wrong_carrier': 'Carrier for selected shipment is not Endicia',
         })
@@ -161,9 +156,9 @@ class ShipmentOut:
         value = 0
 
         for move in self.outgoing_moves:
-            customs_details = (
-                move.product.name, float(move.product.list_price)
-            )
+            # customs_details = (
+                # move.product.name, float(move.product.list_price)
+            # )
             new_item = [
                 Element('Description', move.product.name[0:50]),
                 Element('Quantity', int(math.ceil(move.quantity))),
@@ -174,7 +169,7 @@ class ShipmentOut:
             value += float(move.product.list_price) * move.quantity
 
         request.add_data({
-            'customsinfo':[
+            'customsinfo': [
                 Element('CustomsItems', customsitems),
                 Element('ContentsType', self.endicia_package_type)
             ]
@@ -201,7 +196,6 @@ class ShipmentOut:
         :return: Tracking number as string
         """
         Company = Pool().get('company.company')
-        PartyAddress = Pool().get('party.address')
         Attachment = Pool().get('ir.attachment')
 
         if self.state not in ('packed', 'done'):
@@ -222,8 +216,9 @@ class ShipmentOut:
         mailclass = self.endicia_mailclass.value
         label_request = LabelRequest(
             Test=endicia_credentials.usps_test and 'YES' or 'NO',
-            LabelType=('International' in mailclass) and 'International' \
-                or 'Default',
+            LabelType=(
+                'International' in mailclass
+            ) and 'International' or 'Default',
             # TODO: Probably the following have to be configurable
             ImageFormat="PNG",
             LabelSize="6x4",
@@ -246,7 +241,7 @@ class ShipmentOut:
             test=endicia_credentials.usps_test,
         )
 
-        #From address is the warehouse location. So it must be filled.
+        # From address is the warehouse location. So it must be filled.
         if not self.warehouse.address:
             self.raise_user_error('warehouse_address_required')
 
@@ -258,8 +253,8 @@ class ShipmentOut:
         )
         shipping_label_request.add_data({
             'LabelSubtype': self.endicia_label_subtype,
-            'IncludePostage': self.endicia_include_postage and 'TRUE' or \
-                    'FALSE',
+            'IncludePostage':
+                self.endicia_include_postage and 'TRUE' or 'FALSE',
         })
 
         if self.endicia_label_subtype != 'None':
@@ -287,9 +282,9 @@ class ShipmentOut:
             images = get_images(result)
             for (id, label) in images:
                 Attachment.create({
-                   'name': "%s_%s_USPS-Endicia.png" % (tracking_number, id),
-                   'data': buffer(base64.decodestring(label)),
-                   'resource': '%s,%s' % (self.__name__, self.id)
+                    'name': "%s_%s_USPS-Endicia.png" % (tracking_number, id),
+                    'data': buffer(base64.decodestring(label)),
+                    'resource': '%s,%s' % (self.__name__, self.id)
                 })
 
             return tracking_number
@@ -305,17 +300,17 @@ class ShipmentOut:
             self.raise_user_error('mailclass_missing')
 
         calculate_postage_request = CalculatingPostageAPI(
-            mailclass = self.endicia_mailclass.value,
-            weightoz = sum(map(
+            mailclass=self.endicia_mailclass.value,
+            weightoz=sum(map(
                 lambda move: move.get_weight_for_endicia(), self.outgoing_moves
             )),
-            from_postal_code = self.warehouse.address.zip,
-            to_postal_code = self.delivery_address.zip,
-            to_country_code = self.delivery_address.country.code,
-            accountid = endicia_credentials.account_id,
-            requesterid = endicia_credentials.requester_id,
-            passphrase = endicia_credentials.passphrase,
-            test = endicia_credentials.usps_test,
+            from_postal_code=self.warehouse.address.zip,
+            to_postal_code=self.delivery_address.zip,
+            to_country_code=self.delivery_address.country.code,
+            accountid=endicia_credentials.account_id,
+            requesterid=endicia_credentials.requester_id,
+            passphrase=endicia_credentials.passphrase,
+            test=endicia_credentials.usps_test,
         )
 
         response = calculate_postage_request.send_request()
@@ -373,15 +368,19 @@ class EndiciaRefundRequestWizard(Wizard):
     """
     __name__ = 'endicia.refund.wizard'
 
-    start = StateView('endicia.refund.wizard.view',
+    start = StateView(
+        'endicia.refund.wizard.view',
         'endicia_integration.endicia_refund_wizard_view_form', [
             Button('Cancel', 'end', 'tryton-cancel'),
             Button('Request Refund', 'request_refund', 'tryton-ok'),
-        ])
-    request_refund = StateView('endicia.refund.wizard.view',
+        ]
+    )
+    request_refund = StateView(
+        'endicia.refund.wizard.view',
         'endicia_integration.endicia_refund_wizard_view_form', [
             Button('OK', 'end', 'tryton-ok'),
-        ])
+        ]
+    )
 
     @classmethod
     def __setup__(self):
@@ -398,7 +397,7 @@ class EndiciaRefundRequestWizard(Wizard):
         Company = Pool().get('company.company')
 
         # Getting the api credentials to be used in refund request generation
-        # endicia credentials are in the format : 
+        # endicia credentials are in the format :
         # (account_id, requester_id, passphrase, is_test)
         company = Transaction().context.get('company')
         endicia_credentials = Company(company).get_endicia_credentials()
@@ -430,7 +429,7 @@ class EndiciaRefundRequestWizard(Wizard):
         result = objectify_response(response)
         if str(result.RefundList.PICNumber.IsApproved) == 'YES':
             refund_approved = True
-            # If refund is approved, then set the state of record 
+            # If refund is approved, then set the state of record
             # as cancel/refund
             shipment.__class__.write(
                 [shipment], {'endicia_refunded': True}
@@ -442,6 +441,7 @@ class EndiciaRefundRequestWizard(Wizard):
             'refund_approved': refund_approved
         }
         return default
+
 
 class SCANFormWizardView(ModelView):
     """Shipment SCAN Form Wizard View
@@ -456,15 +456,19 @@ class SCANFormWizard(Wizard):
     """
     __name__ = 'endicia.scanform.wizard'
 
-    start = StateView('endicia.scanform.wizard.view',
+    start = StateView(
+        'endicia.scanform.wizard.view',
         'endicia_integration.endicia_scanform_wizard_view_form', [
             Button('Cancel', 'end', 'tryton-cancel'),
             Button('Make SCAN Form', 'make_scanform', 'tryton-ok'),
-        ])
-    make_scanform = StateView('endicia.scanform.wizard.view',
+        ]
+    )
+    make_scanform = StateView(
+        'endicia.scanform.wizard.view',
         'endicia_integration.endicia_scanform_wizard_view_form', [
             Button('OK', 'end', 'tryton-ok'),
-        ])
+        ]
+    )
 
     @classmethod
     def __setup__(self):
@@ -483,7 +487,7 @@ class SCANFormWizard(Wizard):
         Attachment = Pool().get('ir.attachment')
 
         # Getting the api credentials to be used in refund request generation
-        # endget_weight_for_endiciaicia credentials are in the format : 
+        # endget_weight_for_endiciaicia credentials are in the format :
         # (account_id, requester_id, passphrase, is_test)
         company = Transaction().context.get('company')
         endicia_credentials = Company(company).get_endicia_credentials()
@@ -516,9 +520,10 @@ class SCANFormWizard(Wizard):
             default['response'] = result.ErrorMsg
         else:
             Attachment.create({
-               'name': 'SCAN%s.png' % str(result.SubmissionID),
-               'data': buffer(base64.decodestring(result.SCANForm.pyval)),
-               'resource': 'stock.shipment.out,%s' % shipment.id})
+                'name': 'SCAN%s.png' % str(result.SubmissionID),
+                'data': buffer(base64.decodestring(result.SCANForm.pyval)),
+                'resource': 'stock.shipment.out,%s' % shipment.id
+            })
             default['response'] = 'SCAN' + str(result.SubmissionID)
         return default
 
@@ -542,15 +547,19 @@ class BuyPostageWizard(Wizard):
     """
     __name__ = 'buy.postage.wizard'
 
-    start = StateView('buy.postage.wizard.view',
+    start = StateView(
+        'buy.postage.wizard.view',
         'endicia_integration.endicia_buy_postage_wizard_view_form', [
             Button('Cancel', 'end', 'tryton-cancel'),
             Button('Buy Postage', 'buy_postage', 'tryton-ok'),
-        ])
-    buy_postage = StateView('buy.postage.wizard.view',
+        ]
+    )
+    buy_postage = StateView(
+        'buy.postage.wizard.view',
         'endicia_integration.endicia_buy_postage_wizard_view_form', [
             Button('OK', 'end', 'tryton-ok'),
-        ])
+        ]
+    )
 
     def default_buy_postage(self, data):
         """
@@ -561,12 +570,12 @@ class BuyPostageWizard(Wizard):
         endicia_credentials = company.get_endicia_credentials()
 
         buy_postage_api = BuyingPostageAPI(
-           request_id = Transaction().user,
-           recredit_amount = self.start.amount,
-           requesterid = endicia_credentials.requester_id,
-           accountid = endicia_credentials.account_id,
-           passphrase = endicia_credentials.passphrase,
-           test = endicia_credentials.usps_test,
+            request_id=Transaction().user,
+            recredit_amount=self.start.amount,
+            requesterid=endicia_credentials.requester_id,
+            accountid=endicia_credentials.account_id,
+            passphrase=endicia_credentials.passphrase,
+            test=endicia_credentials.usps_test,
         )
         response = buy_postage_api.send_request()
 
@@ -586,7 +595,7 @@ class StockMove:
     def __setup__(cls):
         super(StockMove, cls).__setup__()
         cls._error_messages.update({
-            'weight_required': \
+            'weight_required':
                 'Weight for product %s in stock move is missing',
         })
 

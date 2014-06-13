@@ -2,11 +2,7 @@
 """
 Customizes company to have Endicia API Information
 """
-# This file is part of Tryton.  The COPYRIGHT file at the top level of
-# this repository contains the full copyright notices and license terms.
 
-# pylint: disable=E1101
-# pylint: disable=F0401
 from collections import namedtuple
 
 from trytond.model import fields
@@ -31,7 +27,7 @@ class Company:
     def __setup__(cls):
         super(Company, cls).__setup__()
         cls._error_messages.update({
-            'endicia_credentials_required': \
+            'endicia_credentials_required':
                 'Endicia settings on company are incomplete.',
         })
 
@@ -42,10 +38,10 @@ class Company:
         :return: (account_id, requester_id, passphrase, is_test)
         """
         if not all([
-                self.endicia_account_id,
-                self.endicia_requester_id,
-                self.endicia_passphrase
-            ]):
+            self.endicia_account_id,
+            self.endicia_requester_id,
+            self.endicia_passphrase
+        ]):
             self.raise_user_error('endicia_credentials_required')
 
         EndiciaSettings = namedtuple('EndiciaSettings', [

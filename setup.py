@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-#This file is part of Tryton.  The COPYRIGHT file at the top level of
-#this repository contains the full copyright notices and license terms.
+# This file is part of Tryton.  The COPYRIGHT file at the top level of
+# this repository contains the full copyright notices and license terms.
 
 from setuptools import setup, Command
 import re
@@ -14,7 +14,7 @@ class XMLTests(Command):
     Running this requires unittest-xml-reporting which can
     be installed using::
 
-        pip install unittest-xml-reporting
+    pip install unittest-xml-reporting
 
     """
     description = "Run tests with coverage and produce jUnit style report"
@@ -76,6 +76,7 @@ class RunAudit(Command):
         else:
             print "No problems found in sourcecode."
 
+
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
@@ -92,13 +93,20 @@ minor_version = int(minor_version)
 requires = ['endicia']
 for dep in info.get('depends', []):
     if not re.match(r'(ir|res|webdav)(\W|$)', dep):
-        requires.append('trytond_%s >= %s.%s, < %s.%s' %
-                (dep, major_version, minor_version, major_version,
-                    minor_version + 1))
-requires.append('trytond >= %s.%s, < %s.%s' %
-        (major_version, minor_version, major_version, minor_version + 1))
+        requires.append(
+            'trytond_%s >= %s.%s, < %s.%s' % (
+                dep, major_version, minor_version, major_version,
+                minor_version + 1
+            )
+        )
+requires.append(
+    'trytond >= %s.%s, < %s.%s' % (
+        major_version, minor_version, major_version, minor_version + 1
+    )
+)
 
-setup(name='trytond_endicia_integration',
+setup(
+    name='trytond_endicia_integration',
     version=info.get('version', '0.0.1'),
     description='Integration with USPS via Endicia for Tryton',
     long_description=read('README.md'),
@@ -108,11 +116,11 @@ setup(name='trytond_endicia_integration',
     packages=[
         'trytond.modules.endicia_integration',
         'trytond.modules.endicia_integration.tests',
-        ],
+    ],
     package_data={
-        'trytond.modules.endicia_integration': info.get('xml', []) \
-            + ['tryton.cfg', 'locale/*.po', 'icons/*.svg'],
-        },
+        'trytond.modules.endicia_integration':
+            info.get('xml', []) + ['tryton.cfg', 'locale/*.po', 'icons/*.svg'],
+    },
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Plugins',
@@ -127,7 +135,7 @@ setup(name='trytond_endicia_integration',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Topic :: Office/Business',
-        ],
+    ],
     license='GPL-3',
     install_requires=requires,
     zip_safe=False,

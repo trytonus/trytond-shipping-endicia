@@ -5,13 +5,10 @@ Customizes party address to have address in correct format for Endicia API .
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 
-# pylint: disable=E1101
-# pylint: disable=F0401
 import string
 
 from endicia import FromAddress, ToAddress
-from trytond.transaction import Transaction
-from trytond.pool import PoolMeta, Pool
+from trytond.pool import PoolMeta
 
 __all__ = ['Address']
 __metaclass__ = PoolMeta
@@ -34,18 +31,17 @@ class Address:
             # Remove the special characters in the phone if any
             phone = "".join([char for char in phone if char in string.digits])
         return FromAddress(
-            FromName = self.name or self.party.name,
-            #FromCompany = user_rec.company.name or None,
-            ReturnAddress1 = self.street,
-            ReturnAddress2 = self.streetbis,
-            ReturnAddress3 = None,
-            ReturnAddress4 = None,
-            FromCity = self.city,
-            FromState = self.subdivision and \
-                self.subdivision.code[3:],
-            FromPostalCode = self.zip,
-            FromPhone = phone,
-            FromEMail = self.party.email,
+            FromName=self.name or self.party.name,
+            # FromCompany = user_rec.company.name or None,
+            ReturnAddress1=self.street,
+            ReturnAddress2=self.streetbis,
+            ReturnAddress3=None,
+            ReturnAddress4=None,
+            FromCity=self.city,
+            FromState=self.subdivision and self.subdivision.code[3:],
+            FromPostalCode=self.zip,
+            FromPhone=phone,
+            FromEMail=self.party.email,
         )
 
     def address_to_endicia_to_address(self):
@@ -59,18 +55,17 @@ class Address:
             # Remove the special characters in the phone if any
             phone = "".join([char for char in phone if char in string.digits])
         return ToAddress(
-            ToName = self.name or self.party.name,
-            ToCompany = self.party and self.party.name,
-            ToAddress1 = self.street,
-            ToAddress2 = self.streetbis,
-            ToAddress3 = None,
-            ToAddress4 = None,
-            ToCity = self.city,
-            ToState = self.subdivision and \
-                self.subdivision.code[3:],
-            ToPostalCode = self.zip,
-            ToCountry = self.country and self.country.name,
-            ToCountryCode = self.country and self.country.code,
-            ToPhone = phone,
-            ToEMail = self.party.email,
+            ToName=self.name or self.party.name,
+            ToCompany=self.party and self.party.name,
+            ToAddress1=self.street,
+            ToAddress2=self.streetbis,
+            ToAddress3=None,
+            ToAddress4=None,
+            ToCity=self.city,
+            ToState=self.subdivision and self.subdivision.code[3:],
+            ToPostalCode=self.zip,
+            ToCountry=self.country and self.country.name,
+            ToCountryCode=self.country and self.country.code,
+            ToPhone=phone,
+            ToEMail=self.party.email,
         )
