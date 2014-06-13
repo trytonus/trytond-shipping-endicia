@@ -6,7 +6,7 @@ from trytond.model import ModelSQL, ModelView, fields
 from trytond.pool import PoolMeta, Pool
 from trytond.transaction import Transaction
 
-__all__ = ['Carrier', 'EndiciaMailclass',]
+__all__ = ['Carrier', 'EndiciaMailclass', ]
 __metaclass__ = PoolMeta
 
 
@@ -29,28 +29,27 @@ class Carrier:
 
         :returns: A tuple of (value, currency_id which in this case is USD)
         """
-        Company = Pool().get('company.company')
         Sale = Pool().get('sale.sale')
         Shipment = Pool().get('stock.shipment.out')
         Currency = Pool().get('currency.currency')
 
+        shipment = Transaction().context.get('shipment')
+        sale = Transaction().context.get('sale')
+
         if Transaction().context.get('ignore_carrier_computation'):
             return Decimal('0'), None
-        if not Transaction().context.get('sale') and \
-                not Transaction().context.get('shipment'):
+        if not sale and not shipment:
             return Decimal('0'), None
 
         if self.carrier_cost_method != 'endicia':
             return super(Carrier, self).get_sale_price(self)
 
-        company = Company(Transaction().context.get('company'))
         usd, = Currency.search([('code', '=', 'USD')])
-        if Transaction().context.get('sale'):
-            return Sale(Transaction().context.get('sale')).\
-                    get_endicia_shipping_cost(), usd.id
-        if Transaction().context.get('shipment'):
-            return Shipment(Transaction().context.get('shipment')).\
-                    get_endicia_shipping_cost(), usd.id
+        if sale:
+            return Sale(sale).get_endicia_shipping_cost(), usd.id
+
+        if shipment:
+            return Shipment(shipment).get_endicia_shipping_cost(), usd.id
 
         return Decimal('0'), None
 

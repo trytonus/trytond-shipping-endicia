@@ -84,8 +84,8 @@ class Sale:
     def __setup__(cls):
         super(Sale, cls).__setup__()
         cls._error_messages.update({
-            'mailclass_missing': 'Select a mailclass to ship using Endicia ' \
-                '[USPS].'
+            'mailclass_missing':
+                'Select a mailclass to ship using Endicia [USPS].'
         })
         cls._buttons.update({
             'update_endicia_shipment_cost': {
@@ -153,9 +153,9 @@ class Sale:
                     ('delete', map(
                         int, [
                             line for line in self.lines if line.shipment_cost
-                        ]
-                    ),
-                )]
+                        ]),
+                    )
+                ]
             })
 
     @classmethod
@@ -200,17 +200,17 @@ class Sale:
             self.raise_user_error('mailclass_missing')
 
         calculate_postage_request = CalculatingPostageAPI(
-            mailclass = self.endicia_mailclass.value,
-            weightoz = sum(map(
+            mailclass=self.endicia_mailclass.value,
+            weightoz=sum(map(
                 lambda line: line.get_weight_for_endicia(), self.lines
             )),
-            from_postal_code = self.warehouse.address.zip,
-            to_postal_code = self.shipment_address.zip,
-            to_country_code = self.shipment_address.country.code,
-            accountid = endicia_credentials.account_id,
-            requesterid = endicia_credentials.requester_id,
-            passphrase = endicia_credentials.passphrase,
-            test = endicia_credentials.usps_test,
+            from_postal_code=self.warehouse.address.zip,
+            to_postal_code=self.shipment_address.zip,
+            to_country_code=self.shipment_address.country.code,
+            accountid=endicia_credentials.account_id,
+            requesterid=endicia_credentials.requester_id,
+            passphrase=endicia_credentials.passphrase,
+            test=endicia_credentials.usps_test,
         )
 
         response = calculate_postage_request.send_request()
