@@ -55,6 +55,7 @@ class TestUSPSEndicia(unittest.TestCase):
         self.currency = POOL.get('currency.currency')
         self.company = POOL.get('company.company')
         self.ir_attachment = POOL.get('ir.attachment')
+        self.User = POOL.get('res.user')
 
     def test0005views(self):
         '''
@@ -68,6 +69,107 @@ class TestUSPSEndicia(unittest.TestCase):
         '''
         test_depends()
 
+    def _create_coa_minimal(self, company):
+        """Create a minimal chart of accounts
+        """
+        AccountTemplate = POOL.get('account.account.template')
+        Account = POOL.get('account.account')
+
+        account_create_chart = POOL.get(
+            'account.create_chart', type="wizard"
+        )
+
+        account_template, = AccountTemplate.search(
+            [('parent', '=', None)]
+        )
+
+        session_id, _, _ = account_create_chart.create()
+        create_chart = account_create_chart(session_id)
+        create_chart.account.account_template = account_template
+        create_chart.account.company = company
+        create_chart.transition_create_account()
+
+        receivable, = Account.search([
+            ('kind', '=', 'receivable'),
+            ('company', '=', company),
+        ])
+        payable, = Account.search([
+            ('kind', '=', 'payable'),
+            ('company', '=', company),
+        ])
+        create_chart.properties.company = company
+        create_chart.properties.account_receivable = receivable
+        create_chart.properties.account_payable = payable
+        create_chart.transition_create_properties()
+
+    def _create_fiscal_year(self, date_=None, company=None):
+        """
+        Creates a fiscal year and requried sequences
+        """
+        FiscalYear = POOL.get('account.fiscalyear')
+        Sequence = POOL.get('ir.sequence')
+        SequenceStrict = POOL.get('ir.sequence.strict')
+        Company = POOL.get('company.company')
+
+        if date_ is None:
+            date_ = datetime.utcnow().date()
+
+        if not company:
+            company, = Company.search([], limit=1)
+
+        invoice_sequence = SequenceStrict.create({
+            'name': '%s' % date_.year,
+            'code': 'account.invoice',
+            'company': company
+        })
+        fiscal_year = FiscalYear.create({
+            'name': '%s' % date_.year,
+            'start_date': date_ + relativedelta(month=1, day=1),
+            'end_date': date_ + relativedelta(month=12, day=31),
+            'company': company,
+            'post_move_sequence': Sequence.create({
+                'name': '%s' % date_.year,
+                'code': 'account.move',
+                'company': company,
+            }),
+            'out_invoice_sequence': invoice_sequence,
+            'in_invoice_sequence': invoice_sequence,
+            'out_credit_note_sequence': invoice_sequence,
+            'in_credit_note_sequence': invoice_sequence,
+        })
+        FiscalYear.create_period([fiscal_year])
+        return fiscal_year
+
+    def _get_account_by_kind(self, kind, company=None, silent=True):
+        """Returns an account with given spec
+
+        :param kind: receivable/payable/expense/revenue
+        :param silent: dont raise error if account is not found
+        """
+        Account = POOL.get('account.account')
+        Company = POOL.get('company.company')
+
+        if company is None:
+            company, = Company.search([], limit=1)
+
+        accounts = Account.search([
+            ('kind', '=', kind),
+            ('company', '=', company)
+        ], limit=1)
+        if not accounts and not silent:
+            raise Exception("Account not found")
+        return accounts[0] if accounts else None
+
+    def _create_payment_term(self):
+        """Create a simple payment term with all advance
+        """
+        PaymentTerm = POOL.get('account.invoice.payment_term')
+
+        return PaymentTerm.create({
+            'name': 'Direct',
+            'lines': [('create', {'type': 'remainder'})]
+        })
+
     def setup_defaults(self):
         """Method to setup defaults
         """
@@ -77,28 +179,29 @@ class TestUSPSEndicia(unittest.TestCase):
             'code': 'USD',
             'symbol': 'USD',
         })
-        currency_alt = self.currency.create({
+        self.currency.create({
             'name': 'Indian Rupee',
             'code': 'INR',
             'symbol': 'INR',
         })
 
-        company, = self.company.search([
-            ('name', '=', 'B2CK')
-        ])
+        company_party = self.party.create({
+            'name': 'Test Party'
+        })
 
         # Endicia Configuration
-        self.company.write([company], {
+        self.company = self.company.create({
+            'party': company_party.id,
             'currency': currency.id,
             'endicia_account_id': '123456',
             'endicia_requester_id': '123456',
             'endicia_passphrase': 'PassPhrase',
             'endicia_test': True,
         })
-        company_phone = self.party_contact.create({
+        self.party_contact.create({
             'type': 'phone',
             'value': '8005551212',
-            'party': company.party.id
+            'party': self.company.party.id
         })
 
         # Sale configuration
@@ -112,6 +215,19 @@ class TestUSPSEndicia(unittest.TestCase):
             'endicia_mailclass': endicia_mailclass.id,
             'endicia_include_postage':  True,
         })
+
+        self.User.write(
+            [self.User(USER)], {
+                'main_company': self.company.id,
+                'company': self.company.id,
+            }
+        )
+
+        CONTEXT.update(self.User.get_preferences(context_only=True))
+
+        self._create_fiscal_year(company=self.company)
+        self._create_coa_minimal(company=self.company)
+        self.payment_term = self._create_payment_term()
 
         account_revenue, = self.account.search([
             ('kind', '=', 'revenue')
@@ -165,10 +281,6 @@ class TestUSPSEndicia(unittest.TestCase):
             'carrier_cost_method': 'endicia',
         })
 
-        payment_term = self.payment_term.create({
-            'name': 'Cash',
-        })
-
         country_us = self.country.create({
             'name': 'United States',
             'code': 'US',
@@ -194,13 +306,13 @@ class TestUSPSEndicia(unittest.TestCase):
             'city': 'Palo Alto',
             'country': country_us.id,
             'subdivision': subdivision_california.id,
-            'party': company.party.id,
+            'party': self.company.party.id,
         })
 
         sale_party = self.party.create({
             'name': 'Test Sale Party',
         })
-        sale_party_phone = self.party_contact.create({
+        self.party_contact.create({
             'type': 'phone',
             'value': '8005763279',
             'party': sale_party.id
@@ -216,36 +328,38 @@ class TestUSPSEndicia(unittest.TestCase):
             'party': sale_party,
         })
 
-        # Create sale order
-        sale = self.sale.create({
-            'reference': 'S-1001',
-            'payment_term': payment_term,
-            'party': sale_party.id,
-            'invoice_address': sale_address.id,
-            'shipment_address': sale_address.id,
-            'carrier': carrier.id,
-            'lines': [
-                ('create', {
-                    'type': 'line',
-                    'quantity': 1,
-                    'product': product,
-                    'unit_price': Decimal('10.00'),
-                    'description': 'Test Description1',
-                    'unit': uom_kg,
-                }),
-            ]
-        })
+        with Transaction().set_context(company=self.company.id):
 
-        self.stock_location.write([sale.warehouse], {
-            'address': company_address.id,
-        })
+            # Create sale order
+            sale = self.sale.create({
+                'reference': 'S-1001',
+                'payment_term': self.payment_term,
+                'party': sale_party.id,
+                'invoice_address': sale_address.id,
+                'shipment_address': sale_address.id,
+                'carrier': carrier.id,
+                'lines': [
+                    ('create', {
+                        'type': 'line',
+                        'quantity': 1,
+                        'product': product,
+                        'unit_price': Decimal('10.00'),
+                        'description': 'Test Description1',
+                        'unit': uom_kg,
+                    }),
+                ]
+            })
 
-        # Confirm and process sale order
-        self.assertEqual(len(sale.lines), 1)
-        self.sale.quote([sale])
-        self.assertEqual(len(sale.lines), 2)
-        self.sale.confirm([sale])
-        self.sale.process([sale])
+            self.stock_location.write([sale.warehouse], {
+                'address': company_address.id,
+            })
+
+            # Confirm and process sale order
+            self.assertEqual(len(sale.lines), 1)
+            self.sale.quote([sale])
+            self.assertEqual(len(sale.lines), 2)
+            self.sale.confirm([sale])
+            self.sale.process([sale])
 
     def test_0010_generate_endicia_gss_labels(self):
         """Test case to generate Endicia labels.
@@ -271,17 +385,19 @@ class TestUSPSEndicia(unittest.TestCase):
             shipment.assign([shipment])
             shipment.pack([shipment])
 
-            # Call method to generate labels.
-            shipment.make_endicia_labels()
+            with Transaction().set_context(company=self.company.id):
+
+                # Call method to generate labels.
+                shipment.make_endicia_labels()
 
             self.assertTrue(shipment.tracking_number)
-            self.assertTrue(len(
+            self.assertTrue(
                 self.ir_attachment.search([
                     ('resource', '=', 'stock.shipment.out,%s' % shipment.id)
-                ])
-            ) > 0)
+                ], count=True) > 0
+            )
 
-    #TODO: Add more tests for wizards and other operations
+    # TODO: Add more tests for wizards and other operations
 
 
 def suite():
@@ -290,10 +406,10 @@ def suite():
     for test in test_account.suite():
         if test not in suite:
             suite.addTest(test)
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(
-        TestUSPSEndicia))
+    suite.addTests(
+        unittest.TestLoader().loadTestsFromTestCase(TestUSPSEndicia)
+    )
     return suite
 
 if __name__ == '__main__':
     unittest.TextTestRunner(verbosity=2).run(suite())
-

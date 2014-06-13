@@ -153,8 +153,8 @@ class Sale:
                     ('delete', map(
                         int, [
                             line for line in self.lines if line.shipment_cost
-                        ]),
-                    )
+                        ]
+                    ))
                 ]
             })
 
