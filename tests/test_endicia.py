@@ -56,6 +56,7 @@ class TestUSPSEndicia(unittest.TestCase):
         self.company = POOL.get('company.company')
         self.ir_attachment = POOL.get('ir.attachment')
         self.User = POOL.get('res.user')
+        self.template = POOL.get('product.template')
 
     def test0005views(self):
         '''
@@ -117,26 +118,26 @@ class TestUSPSEndicia(unittest.TestCase):
         if not company:
             company, = Company.search([], limit=1)
 
-        invoice_sequence = SequenceStrict.create({
+        invoice_sequence, = SequenceStrict.create([{
             'name': '%s' % date_.year,
             'code': 'account.invoice',
             'company': company
-        })
-        fiscal_year = FiscalYear.create({
+        }])
+        fiscal_year, = FiscalYear.create([{
             'name': '%s' % date_.year,
             'start_date': date_ + relativedelta(month=1, day=1),
             'end_date': date_ + relativedelta(month=12, day=31),
             'company': company,
-            'post_move_sequence': Sequence.create({
+            'post_move_sequence': Sequence.create([{
                 'name': '%s' % date_.year,
                 'code': 'account.move',
                 'company': company,
-            }),
+            }])[0],
             'out_invoice_sequence': invoice_sequence,
             'in_invoice_sequence': invoice_sequence,
             'out_credit_note_sequence': invoice_sequence,
             'in_credit_note_sequence': invoice_sequence,
-        })
+        }])
         FiscalYear.create_period([fiscal_year])
         return fiscal_year
 
@@ -165,51 +166,51 @@ class TestUSPSEndicia(unittest.TestCase):
         """
         PaymentTerm = POOL.get('account.invoice.payment_term')
 
-        return PaymentTerm.create({
+        return PaymentTerm.create([{
             'name': 'Direct',
-            'lines': [('create', {'type': 'remainder'})]
-        })
+            'lines': [('create', [{'type': 'remainder'}])]
+        }])
 
     def setup_defaults(self):
         """Method to setup defaults
         """
         # Create currency
-        currency = self.currency.create({
+        currency, = self.currency.create([{
             'name': 'United Stated Dollar',
             'code': 'USD',
             'symbol': 'USD',
-        })
-        self.currency.create({
+        }])
+        self.currency.create([{
             'name': 'Indian Rupee',
             'code': 'INR',
             'symbol': 'INR',
-        })
+        }])
 
-        company_party = self.party.create({
+        company_party, = self.party.create([{
             'name': 'Test Party'
-        })
+        }])
 
         # Endicia Configuration
-        self.company = self.company.create({
+        self.company, = self.company.create([{
             'party': company_party.id,
             'currency': currency.id,
             'endicia_account_id': '123456',
             'endicia_requester_id': '123456',
             'endicia_passphrase': 'PassPhrase',
             'endicia_test': True,
-        })
-        self.party_contact.create({
+        }])
+        self.party_contact.create([{
             'type': 'phone',
             'value': '8005551212',
             'party': self.company.party.id
-        })
+        }])
 
         # Sale configuration
         endicia_mailclass, = self.endicia_mailclass.search([
             ('value', '=', 'First')
         ])
 
-        self.sale_config.write(1, {
+        self.sale_config.write(self.sale_config(1), {
             'endicia_label_subtype': 'Integrated',
             'endicia_integrated_form_type': 'Form2976',
             'endicia_mailclass': endicia_mailclass.id,
@@ -227,22 +228,22 @@ class TestUSPSEndicia(unittest.TestCase):
 
         self._create_fiscal_year(company=self.company)
         self._create_coa_minimal(company=self.company)
-        self.payment_term = self._create_payment_term()
+        self.payment_term, = self._create_payment_term()
 
         account_revenue, = self.account.search([
             ('kind', '=', 'revenue')
         ])
 
         # Create product category
-        category = self.category.create({
+        category, = self.category.create([{
             'name': 'Test Category',
-        })
+        }])
 
         uom_kg, = self.uom.search([('symbol', '=', 'kg')])
         uom_pound, = self.uom.search([('symbol', '=', 'lbs')])
 
         # Carrier Carrier Product
-        carrier_product = self.product.create({
+        carrier_product_template, = self.template.create([{
             'name': 'Test Carrier Product',
             'category': category.id,
             'type': 'service',
@@ -253,10 +254,12 @@ class TestUSPSEndicia(unittest.TestCase):
             'default_uom': uom_kg,
             'cost_price_method': 'fixed',
             'account_revenue': account_revenue.id,
-        })
+        }])
+
+        carrier_product = carrier_product_template.products[0]
 
         # Create product
-        product = self.product.create({
+        template, = self.template.create([{
             'name': 'Test Product',
             'category': category.id,
             'type': 'goods',
@@ -266,40 +269,47 @@ class TestUSPSEndicia(unittest.TestCase):
             'cost_price': Decimal('5'),
             'default_uom': uom_kg,
             'account_revenue': account_revenue.id,
-            'weight': 0.5,
+            'weight': .5,
             'weight_uom': uom_pound.id,
-        })
+        }])
+
+        product = template.products[0]
 
         # Create party
-        carrier_party = self.party.create({
+        carrier_party, = self.party.create([{
             'name': 'Test Party',
-        })
+        }])
 
-        carrier = self.carrier.create({
+        # Create party
+        carrier_party, = self.party.create([{
+            'name': 'Test Party',
+        }])
+
+        carrier, = self.carrier.create([{
             'party': carrier_party.id,
             'carrier_product': carrier_product.id,
             'carrier_cost_method': 'endicia',
-        })
+        }])
 
-        country_us = self.country.create({
+        country_us, = self.country.create([{
             'name': 'United States',
             'code': 'US',
-        })
+        }])
 
-        subdivision_idaho = self.country_subdivision.create({
+        subdivision_idaho, = self.country_subdivision.create([{
             'name': 'Idaho',
             'code': 'US-ID',
             'country': country_us.id,
             'type': 'state'
-        })
+        }])
 
-        subdivision_california = self.country_subdivision.create({
+        subdivision_california, = self.country_subdivision.create([{
             'name': 'California',
             'code': 'US-CA',
             'country': country_us.id,
             'type': 'state'
-        })
-        company_address = self.party_address.create({
+        }])
+        company_address, = self.party_address.create([{
             'name': 'Amine Khechfe',
             'street': '247 High Street',
             'zip': '84301',
@@ -307,18 +317,18 @@ class TestUSPSEndicia(unittest.TestCase):
             'country': country_us.id,
             'subdivision': subdivision_california.id,
             'party': self.company.party.id,
-        })
+        }])
 
-        sale_party = self.party.create({
+        sale_party, = self.party.create([{
             'name': 'Test Sale Party',
-        })
-        self.party_contact.create({
+        }])
+        self.party_contact.create([{
             'type': 'phone',
             'value': '8005763279',
             'party': sale_party.id
-        })
+        }])
 
-        sale_address = self.party_address.create({
+        sale_address, = self.party_address.create([{
             'name': 'John Doe',
             'street': '123 Main Street',
             'zip': '83702',
@@ -326,12 +336,12 @@ class TestUSPSEndicia(unittest.TestCase):
             'country': country_us.id,
             'subdivision': subdivision_idaho.id,
             'party': sale_party,
-        })
+        }])
 
         with Transaction().set_context(company=self.company.id):
 
             # Create sale order
-            sale = self.sale.create({
+            sale, = self.sale.create([{
                 'reference': 'S-1001',
                 'payment_term': self.payment_term,
                 'party': sale_party.id,
@@ -339,16 +349,16 @@ class TestUSPSEndicia(unittest.TestCase):
                 'shipment_address': sale_address.id,
                 'carrier': carrier.id,
                 'lines': [
-                    ('create', {
+                    ('create', [{
                         'type': 'line',
                         'quantity': 1,
                         'product': product,
                         'unit_price': Decimal('10.00'),
                         'description': 'Test Description1',
                         'unit': uom_kg,
-                    }),
+                    }]),
                 ]
-            })
+            }])
 
             self.stock_location.write([sale.warehouse], {
                 'address': company_address.id,

@@ -32,10 +32,12 @@ def register():
         EndiciaRefundRequestWizardView,
         SCANFormWizardView,
         BuyPostageWizardView,
-        module='endicia_integration', type_='model')
+        module='endicia_integration', type_='model'
+    )
     Pool.register(
         GenerateEndiciaLabel,
         EndiciaRefundRequestWizard,
         SCANFormWizard,
         BuyPostageWizard,
-        module='endicia_integration', type_='wizard')
+        module='endicia_integration', type_='wizard'
+    )

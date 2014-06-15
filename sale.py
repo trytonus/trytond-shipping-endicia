@@ -138,7 +138,7 @@ class Sale:
             )
             Sale.write([self], {
                 'lines': [
-                    ('create', {
+                    ('create', [{
                         'type': 'line',
                         'product': self.carrier.carrier_product.id,
                         'description': self.endicia_mailclass.name,
@@ -149,12 +149,10 @@ class Sale:
                         'amount': Decimal(shipment_cost),
                         'taxes': [],
                         'sequence': 9999,  # XXX
-                    }),
-                    ('delete', map(
-                        int, [
-                            line for line in self.lines if line.shipment_cost
-                        ]
-                    ))
+                    }]),
+                    ('delete', [
+                        line for line in self.lines if line.shipment_cost
+                    ]),
                 ]
             })
 
@@ -173,6 +171,7 @@ class Sale:
 
     def create_shipment(self, shipment_type):
         Shipment = Pool().get('stock.shipment.out')
+
         shipments = super(Sale, self).create_shipment(shipment_type)
         if shipment_type == 'out' and shipments and self.carrier and \
                 self.carrier.carrier_cost_method == 'endicia':
