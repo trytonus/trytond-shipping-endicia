@@ -240,7 +240,7 @@ class TestUSPSEndicia(unittest.TestCase):
         }])
 
         uom_kg, = self.uom.search([('symbol', '=', 'kg')])
-        uom_pound, = self.uom.search([('symbol', '=', 'lbs')])
+        uom_pound, = self.uom.search([('symbol', '=', 'lb')])
 
         # Carrier Carrier Product
         carrier_product_template, = self.template.create([{
@@ -254,6 +254,7 @@ class TestUSPSEndicia(unittest.TestCase):
             'default_uom': uom_kg,
             'cost_price_method': 'fixed',
             'account_revenue': account_revenue.id,
+            'products': [('create', self.template.default_products())]
         }])
 
         carrier_product = carrier_product_template.products[0]
@@ -271,6 +272,7 @@ class TestUSPSEndicia(unittest.TestCase):
             'account_revenue': account_revenue.id,
             'weight': .5,
             'weight_uom': uom_pound.id,
+            'products': [('create', self.template.default_products())]
         }])
 
         product = template.products[0]
