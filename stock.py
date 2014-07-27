@@ -281,11 +281,11 @@ class ShipmentOut:
             # Save images as attachments
             images = get_images(result)
             for (id, label) in images:
-                Attachment.create({
+                Attachment.create([{
                     'name': "%s_%s_USPS-Endicia.png" % (tracking_number, id),
                     'data': buffer(base64.decodestring(label)),
                     'resource': '%s,%s' % (self.__name__, self.id)
-                })
+                }])
 
             return tracking_number
 
@@ -351,7 +351,7 @@ class GenerateEndiciaLabel(Wizard):
 
         tracking_number = shipment.make_endicia_labels()
 
-        return {'tracking_number': tracking_number}
+        return {'tracking_number': str(tracking_number)}
 
 
 class EndiciaRefundRequestWizardView(ModelView):
@@ -519,11 +519,11 @@ class SCANFormWizard(Wizard):
         if not hasattr(result, 'SCANForm'):
             default['response'] = result.ErrorMsg
         else:
-            Attachment.create({
+            Attachment.create([{
                 'name': 'SCAN%s.png' % str(result.SubmissionID),
                 'data': buffer(base64.decodestring(result.SCANForm.pyval)),
                 'resource': 'stock.shipment.out,%s' % shipment.id
-            })
+            }])
             default['response'] = 'SCAN' + str(result.SubmissionID)
         return default
 
