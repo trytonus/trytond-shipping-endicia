@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<form string="Endicia Configuration">
+    <group string="Account Crendentials" id="credentials" colspan="4">
+        <label name="account_id"/>
+        <field name="account_id"/>
+        <label name="requester_id"/>
+        <field name="requester_id"/>
+        <label name="passphrase"/>
+        <field name="passphrase"/>
+        <label name="is_test"/>
+        <field name="is_test"/>
+    </group>
+</form>

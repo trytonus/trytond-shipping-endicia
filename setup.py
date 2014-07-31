@@ -148,7 +148,9 @@ setup(
     ],
     package_data={
         'trytond.modules.endicia_integration':
-            info.get('xml', []) + ['tryton.cfg', 'locale/*.po', 'icons/*.svg'],
+            info.get('xml', []) + [
+                'tryton.cfg', 'locale/*.po', 'icons/*.svg', 'view/*xml'
+            ],
     },
     classifiers=[
         'Development Status :: 4 - Beta',

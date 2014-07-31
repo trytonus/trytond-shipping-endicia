@@ -195,8 +195,8 @@ class ShipmentOut:
 
         :return: Tracking number as string
         """
-        Company = Pool().get('company.company')
         Attachment = Pool().get('ir.attachment')
+        EndiciaConfiguration = Pool().get('endicia.configuration')
 
         if self.state not in ('packed', 'done'):
             self.raise_user_error('invalid_state')
@@ -207,15 +207,14 @@ class ShipmentOut:
         if self.tracking_number:
             self.raise_user_error('tracking_number_already_present')
 
-        company = Transaction().context.get('company')
-        endicia_credentials = Company(company).get_endicia_credentials()
+        endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
 
         if not self.endicia_mailclass:
             self.raise_user_error('mailclass_missing')
 
         mailclass = self.endicia_mailclass.value
         label_request = LabelRequest(
-            Test=endicia_credentials.usps_test and 'YES' or 'NO',
+            Test=endicia_credentials.is_test and 'YES' or 'NO',
             LabelType=(
                 'International' in mailclass
             ) and 'International' or 'Default',
@@ -238,7 +237,7 @@ class ShipmentOut:
             accountid=endicia_credentials.account_id,
             requesterid=endicia_credentials.requester_id,
             passphrase=endicia_credentials.passphrase,
-            test=endicia_credentials.usps_test,
+            test=endicia_credentials.is_test,
         )
 
         # From address is the warehouse location. So it must be filled.
@@ -294,7 +293,8 @@ class ShipmentOut:
 
         :returns: The shipping cost in USD
         """
-        endicia_credentials = self.company.get_endicia_credentials()
+        EndiciaConfiguration = Pool().get('endicia.configuration')
+        endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
 
         if not self.endicia_mailclass:
             self.raise_user_error('mailclass_missing')
@@ -310,7 +310,7 @@ class ShipmentOut:
             accountid=endicia_credentials.account_id,
             requesterid=endicia_credentials.requester_id,
             passphrase=endicia_credentials.passphrase,
-            test=endicia_credentials.usps_test,
+            test=endicia_credentials.is_test,
         )
 
         response = calculate_postage_request.send_request()
@@ -394,13 +394,12 @@ class EndiciaRefundRequestWizard(Wizard):
         and returns the response.
         """
         Shipment = Pool().get('stock.shipment.out')
-        Company = Pool().get('company.company')
+        EndiciaConfiguration = Pool().get('endicia.configuration')
 
         # Getting the api credentials to be used in refund request generation
         # endicia credentials are in the format :
         # (account_id, requester_id, passphrase, is_test)
-        company = Transaction().context.get('company')
-        endicia_credentials = Company(company).get_endicia_credentials()
+        endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
 
         try:
             shipment, = Shipment.browse(Transaction().context['active_ids'])
@@ -416,7 +415,7 @@ class EndiciaRefundRequestWizard(Wizard):
         # so its better to use the same name here for better understanding
         pic_number = shipment.tracking_number
 
-        test = endicia_credentials.usps_test and 'Y' or 'N'
+        test = endicia_credentials.is_test and 'Y' or 'N'
 
         refund_request = RefundRequestAPI(
             pic_number=pic_number,
@@ -483,14 +482,13 @@ class SCANFormWizard(Wizard):
         Generate the SCAN Form for the current shipment record
         """
         Shipment = Pool().get('stock.shipment.out')
-        Company = Pool().get('company.company')
+        EndiciaConfiguration = Pool().get('endicia.configuration')
         Attachment = Pool().get('ir.attachment')
 
         # Getting the api credentials to be used in refund request generation
         # endget_weight_for_endiciaicia credentials are in the format :
         # (account_id, requester_id, passphrase, is_test)
-        company = Transaction().context.get('company')
-        endicia_credentials = Company(company).get_endicia_credentials()
+        endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
         default = {}
 
         try:
@@ -505,7 +503,7 @@ class SCANFormWizard(Wizard):
 
         pic_number = shipment.tracking_number
 
-        test = endicia_credentials.usps_test and 'Y' or 'N'
+        test = endicia_credentials.is_test and 'Y' or 'N'
 
         scan_request = SCANFormAPI(
             pic_number=pic_number,
@@ -565,9 +563,10 @@ class BuyPostageWizard(Wizard):
         """
         Generate the SCAN Form for the current shipment record
         """
+        EndiciaConfiguration = Pool().get('endicia.configuration')
+
         default = {}
-        company = self.start.company
-        endicia_credentials = company.get_endicia_credentials()
+        endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
 
         buy_postage_api = BuyingPostageAPI(
             request_id=Transaction().user,
@@ -575,7 +574,7 @@ class BuyPostageWizard(Wizard):
             requesterid=endicia_credentials.requester_id,
             accountid=endicia_credentials.account_id,
             passphrase=endicia_credentials.passphrase,
-            test=endicia_credentials.usps_test,
+            test=endicia_credentials.is_test,
         )
         response = buy_postage_api.send_request()
 

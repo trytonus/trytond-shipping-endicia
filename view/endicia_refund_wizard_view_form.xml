@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form string="Request Refund" col="2">
+    <label name="refund_approved"/>
+    <field name="refund_approved"/>
+    <separator id="status" string="Status" colspan="4"/>
+    <newline/>
+    <field name="refund_status" colspan="4"/>
+</form>
