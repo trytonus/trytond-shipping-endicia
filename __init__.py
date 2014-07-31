@@ -5,7 +5,6 @@
 Endicia integration
 """
 from trytond.pool import Pool
-from company import Company
 from party import Address
 from stock import (
     ShipmentOut, GenerateEndiciaLabelMessage, GenerateEndiciaLabel,
@@ -15,11 +14,11 @@ from stock import (
 )
 from carrier import Carrier, EndiciaMailclass
 from sale import Configuration, Sale, SaleLine
+from configuration import EndiciaConfiguration
 
 
 def register():
     Pool.register(
-        Company,
         Address,
         Carrier,
         EndiciaMailclass,
@@ -32,6 +31,7 @@ def register():
         EndiciaRefundRequestWizardView,
         SCANFormWizardView,
         BuyPostageWizardView,
+        EndiciaConfiguration,
         module='endicia_integration', type_='model'
     )
     Pool.register(

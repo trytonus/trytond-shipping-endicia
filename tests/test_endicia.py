@@ -57,6 +57,7 @@ class TestUSPSEndicia(unittest.TestCase):
         self.ir_attachment = POOL.get('ir.attachment')
         self.User = POOL.get('res.user')
         self.template = POOL.get('product.template')
+        self.EndiciaConfiguration = POOL.get('endicia.configuration')
 
     def test0005views(self):
         '''
@@ -191,13 +192,15 @@ class TestUSPSEndicia(unittest.TestCase):
         }])
 
         # Endicia Configuration
+        self.EndiciaConfiguration.create([{
+            'account_id': '123456',
+            'requester_id': '123456',
+            'passphrase': 'PassPhrase',
+            'is_test': True,
+        }])
         self.company, = self.company.create([{
             'party': company_party.id,
             'currency': currency.id,
-            'endicia_account_id': '123456',
-            'endicia_requester_id': '123456',
-            'endicia_passphrase': 'PassPhrase',
-            'endicia_test': True,
         }])
         self.party_contact.create([{
             'type': 'phone',

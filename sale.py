@@ -193,7 +193,9 @@ class Sale:
 
         :returns: The shipping cost in USD
         """
-        endicia_credentials = self.company.get_endicia_credentials()
+        EndiciaConfiguration = Pool().get('endicia.configuration')
+
+        endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
 
         if not self.endicia_mailclass:
             self.raise_user_error('mailclass_missing')
@@ -209,7 +211,7 @@ class Sale:
             accountid=endicia_credentials.account_id,
             requesterid=endicia_credentials.requester_id,
             passphrase=endicia_credentials.passphrase,
-            test=endicia_credentials.usps_test,
+            test=endicia_credentials.is_test,
         )
 
         response = calculate_postage_request.send_request()
