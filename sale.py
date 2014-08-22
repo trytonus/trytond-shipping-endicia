@@ -5,6 +5,7 @@ import math
 
 from endicia import CalculatingPostageAPI
 from endicia.tools import objectify_response
+from endicia.exceptions import RequestError
 from trytond.model import ModelView, fields
 from trytond.pool import PoolMeta, Pool
 from trytond.transaction import Transaction
@@ -214,7 +215,10 @@ class Sale:
             test=endicia_credentials.is_test,
         )
 
-        response = calculate_postage_request.send_request()
+        try:
+            response = calculate_postage_request.send_request()
+        except RequestError, e:
+            self.raise_user_error(unicode(e))
 
         return Decimal(
             objectify_response(response).PostagePrice.get('TotalAmount')
