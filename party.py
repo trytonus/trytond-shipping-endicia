@@ -40,7 +40,7 @@ class Address:
             FromCity=self.city,
             FromState=self.subdivision and self.subdivision.code[3:],
             FromPostalCode=self.zip[:5],
-            FromPhone=phone,
+            FromPhone=phone and phone[-10:],
             FromEMail=self.party.email,
         )
 
@@ -54,6 +54,10 @@ class Address:
         if phone:
             # Remove the special characters in the phone if any
             phone = "".join([char for char in phone if char in string.digits])
+            if self.country and self.country.code != 'US':
+                phone = phone[-30:]
+            else:
+                phone = phone[-10:]
         return ToAddress(
             ToName=self.name or self.party.name,
             ToCompany=self.party and self.party.name,
