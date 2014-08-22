@@ -201,7 +201,10 @@ class ShipmentOut:
         if self.state not in ('packed', 'done'):
             self.raise_user_error('invalid_state')
 
-        if not self.carrier.carrier_cost_method == 'endicia':
+        if not (
+            self.carrier and
+            self.carrier.carrier_cost_method == 'endicia'
+        ):
             self.raise_user_error('wrong_carrier')
 
         if self.tracking_number:
@@ -304,8 +307,8 @@ class ShipmentOut:
             weightoz=sum(map(
                 lambda move: move.get_weight_for_endicia(), self.outgoing_moves
             )),
-            from_postal_code=self.warehouse.address.zip,
-            to_postal_code=self.delivery_address.zip,
+            from_postal_code=self.warehouse.address.zip[:5],
+            to_postal_code=self.delivery_address.zip[:5],
             to_country_code=self.delivery_address.country.code,
             accountid=endicia_credentials.account_id,
             requesterid=endicia_credentials.requester_id,
@@ -408,7 +411,10 @@ class EndiciaRefundRequestWizard(Wizard):
                 'This wizard can be called for only one shipment at a time'
             )
 
-        if not shipment.carrier.carrier_cost_method == 'endicia':
+        if not (
+            shipment.carrier and
+            shipment.carrier.carrier_cost_method == 'endicia'
+        ):
             self.raise_user_error('wrong_carrier')
 
         # PICNumber is the argument name expected by endicia in API,
@@ -498,7 +504,10 @@ class SCANFormWizard(Wizard):
                 'This wizard can be called for only one shipment at a time'
             )
 
-        if not shipment.carrier.carrier_cost_method == 'endicia':
+        if not (
+            shipment.carrier and
+            shipment.carrier.carrier_cost_method == 'endicia'
+        ):
             self.raise_user_error('wrong_carrier')
 
         pic_number = shipment.tracking_number

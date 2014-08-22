@@ -206,8 +206,8 @@ class Sale:
             weightoz=sum(map(
                 lambda line: line.get_weight_for_endicia(), self.lines
             )),
-            from_postal_code=self.warehouse.address.zip,
-            to_postal_code=self.shipment_address.zip,
+            from_postal_code=self.warehouse.address.zip[:5],
+            to_postal_code=self.shipment_address.zip[:5],
             to_country_code=self.shipment_address.country.code,
             accountid=endicia_credentials.account_id,
             requesterid=endicia_credentials.requester_id,

@@ -39,7 +39,7 @@ class Address:
             ReturnAddress4=None,
             FromCity=self.city,
             FromState=self.subdivision and self.subdivision.code[3:],
-            FromPostalCode=self.zip,
+            FromPostalCode=self.zip[:5],
             FromPhone=phone,
             FromEMail=self.party.email,
         )
@@ -63,7 +63,7 @@ class Address:
             ToAddress4=None,
             ToCity=self.city,
             ToState=self.subdivision and self.subdivision.code[3:],
-            ToPostalCode=self.zip,
+            ToPostalCode=self.zip[:5],
             ToCountry=self.country and self.country.name,
             ToCountryCode=self.country and self.country.code,
             ToPhone=phone,
