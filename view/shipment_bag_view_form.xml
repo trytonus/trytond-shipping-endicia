@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<form string="Endicia Shipment Bag">
+      <label name="open_date"/>
+      <field name="open_date" xexpand="1"/>
+      <label name="close_date"/>
+      <field name="close_date" xexpand="1"/>
+      <label name="submission_id"/>
+      <field name="submission_id" xexpand="1"/>
+      <newline />
+      <field name="shipments" colspan="4"/>
+      <group id="buttons" colspan="4">
+          <field name="state" colspan="2"/>
+          <button name="close" colspan="2"
+            string="Create Scan Form and Close" icon="tryton-go-next"/>
+      </group>
+</form>

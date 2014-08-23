@@ -47,25 +47,6 @@
             <field name="name">endicia_refund_wizard_view_form</field>
         </record>
 
-        <!-- Make SCAN Form -->
-        <record model="ir.action.wizard" id="wizard_make_scanform">
-            <field name="name">Make Endicia SCAN Form</field>
-            <field name="wiz_name">endicia.scanform.wizard</field>
-            <field name="model">stock.shipment.out</field>
-        </record>
-
-        <record model="ir.action.keyword" id="act_wizard_make_scanform">
-            <field name="keyword">form_action</field>
-            <field name="model">stock.shipment.out,-1</field>
-            <field name="action" ref="wizard_make_scanform"/>
-        </record>
-
-        <record model="ir.ui.view" id="endicia_scanform_wizard_view_form">
-            <field name="model">endicia.scanform.wizard.view</field>
-            <field name="type">form</field>
-            <field name="name">endicia_scanform_wizard_view_form</field>
-        </record>
-
         <!-- Buy Postage Wizard -->
         <record model="ir.ui.view" id="endicia_buy_postage_wizard_view_form">
             <field name="model">buy.postage.wizard.view</field>

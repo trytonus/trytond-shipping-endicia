@@ -9,9 +9,9 @@ from party import Address
 from stock import (
     ShipmentOut, GenerateEndiciaLabelMessage, GenerateEndiciaLabel,
     EndiciaRefundRequestWizardView, EndiciaRefundRequestWizard,
-    SCANFormWizardView, SCANFormWizard, BuyPostageWizardView,
-    BuyPostageWizard, StockMove
+    BuyPostageWizardView, BuyPostageWizard, StockMove
 )
+from shipment_bag import EndiciaShipmentBag
 from carrier import Carrier, EndiciaMailclass
 from sale import Configuration, Sale, SaleLine
 from configuration import EndiciaConfiguration
@@ -24,12 +24,12 @@ def register():
         EndiciaMailclass,
         Configuration,
         Sale,
+        EndiciaShipmentBag,
         SaleLine,
         StockMove,
         ShipmentOut,
         GenerateEndiciaLabelMessage,
         EndiciaRefundRequestWizardView,
-        SCANFormWizardView,
         BuyPostageWizardView,
         EndiciaConfiguration,
         module='endicia_integration', type_='model'
@@ -37,7 +37,6 @@ def register():
     Pool.register(
         GenerateEndiciaLabel,
         EndiciaRefundRequestWizard,
-        SCANFormWizard,
         BuyPostageWizard,
         module='endicia_integration', type_='wizard'
     )

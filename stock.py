@@ -10,11 +10,11 @@ import base64
 import math
 
 from endicia import ShippingLabelAPI, LabelRequest, RefundRequestAPI, \
-    SCANFormAPI, BuyingPostageAPI, Element, CalculatingPostageAPI
+    BuyingPostageAPI, Element, CalculatingPostageAPI
 from endicia.tools import objectify_response, get_images
 from endicia.exceptions import RequestError
 
-from trytond.model import ModelView, fields
+from trytond.model import Workflow, ModelView, fields
 from trytond.wizard import Wizard, StateView, Button
 from trytond.transaction import Transaction
 from trytond.pool import Pool, PoolMeta
@@ -28,8 +28,7 @@ __metaclass__ = PoolMeta
 __all__ = [
     'ShipmentOut', 'GenerateEndiciaLabelMessage', 'GenerateEndiciaLabel',
     'EndiciaRefundRequestWizardView', 'EndiciaRefundRequestWizard',
-    'SCANFormWizardView', 'SCANFormWizard', 'BuyPostageWizardView',
-    'BuyPostageWizard', 'StockMove',
+    'BuyPostageWizardView', 'BuyPostageWizard', 'StockMove',
 ]
 
 
@@ -42,6 +41,8 @@ class ShipmentOut:
             'readonly': ~Eval('state').in_(['packed', 'done']),
         }, depends=['state']
     )
+    endicia_shipment_bag = fields.Many2One(
+        'endicia.shipment.bag', 'Endicia Shipment Bag')
     endicia_label_subtype = fields.Selection([
         ('None', 'None'),
         ('Integrated', 'Integrated')
@@ -131,6 +132,30 @@ class ShipmentOut:
             self.carrier.carrier_cost_method == 'endicia'
 
         return res
+
+    @classmethod
+    @ModelView.button
+    @Workflow.transition('done')
+    def done(cls, shipments):
+        """
+        Add endicia shipments to a open bag
+        """
+        EndiciaShipmentBag = Pool().get('endicia.shipment.bag')
+
+        super(ShipmentOut, cls).done(shipments)
+        endicia_shipments = filter(
+            lambda s: s.carrier and s.carrier.carrier_cost_method == 'endicia',
+            shipments
+        )
+
+        if not endicia_shipments:
+            return
+
+        with Transaction().set_user(0):
+            bag = EndiciaShipmentBag.get_bag()
+        cls.write(endicia_shipments, {
+            'endicia_shipment_bag': bag
+        })
 
     def _get_carrier_context(self):
         "Pass shipment in the context"
@@ -404,27 +429,24 @@ class EndiciaRefundRequestWizard(Wizard):
         # (account_id, requester_id, passphrase, is_test)
         endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
 
-        try:
-            shipment, = Shipment.browse(Transaction().context['active_ids'])
-        except ValueError:
-            self.raise_user_error(
-                'This wizard can be called for only one shipment at a time'
-            )
-
-        if not (
-            shipment.carrier and
-            shipment.carrier.carrier_cost_method == 'endicia'
-        ):
-            self.raise_user_error('wrong_carrier')
+        shipments = Shipment.browse(Transaction().context['active_ids'])
 
         # PICNumber is the argument name expected by endicia in API,
         # so its better to use the same name here for better understanding
-        pic_number = shipment.tracking_number
+        pic_numbers = []
+        for shipment in shipments:
+            if not (
+                shipment.carrier and
+                shipment.carrier.carrier_cost_method == 'endicia'
+            ):
+                self.raise_user_error('wrong_carrier')
+
+            pic_numbers.append(shipment.tracking_number)
 
         test = endicia_credentials.is_test and 'Y' or 'N'
 
         refund_request = RefundRequestAPI(
-            pic_number=pic_number,
+            pic_numbers=pic_numbers,
             accountid=endicia_credentials.account_id,
             requesterid=endicia_credentials.requester_id,
             passphrase=endicia_credentials.passphrase,
@@ -445,93 +467,6 @@ class EndiciaRefundRequestWizard(Wizard):
             'refund_status': unicode(result.RefundList.PICNumber.ErrorMsg),
             'refund_approved': refund_approved
         }
-        return default
-
-
-class SCANFormWizardView(ModelView):
-    """Shipment SCAN Form Wizard View
-    """
-    __name__ = 'endicia.scanform.wizard.view'
-
-    response = fields.Text('Response', readonly=True,)
-
-
-class SCANFormWizard(Wizard):
-    """A wizard to generate the SCAN Form for the current shipment record
-    """
-    __name__ = 'endicia.scanform.wizard'
-
-    start = StateView(
-        'endicia.scanform.wizard.view',
-        'endicia_integration.endicia_scanform_wizard_view_form', [
-            Button('Cancel', 'end', 'tryton-cancel'),
-            Button('Make SCAN Form', 'make_scanform', 'tryton-ok'),
-        ]
-    )
-    make_scanform = StateView(
-        'endicia.scanform.wizard.view',
-        'endicia_integration.endicia_scanform_wizard_view_form', [
-            Button('OK', 'end', 'tryton-ok'),
-        ]
-    )
-
-    @classmethod
-    def __setup__(self):
-        super(SCANFormWizard, self).__setup__()
-        self._error_messages.update({
-            'scan_form_error': '"%s"',
-            'wrong_carrier': 'Carrier for selected shipment is not Endicia'
-        })
-
-    def default_make_scanform(self, data):
-        """
-        Generate the SCAN Form for the current shipment record
-        """
-        Shipment = Pool().get('stock.shipment.out')
-        EndiciaConfiguration = Pool().get('endicia.configuration')
-        Attachment = Pool().get('ir.attachment')
-
-        # Getting the api credentials to be used in refund request generation
-        # endget_weight_for_endiciaicia credentials are in the format :
-        # (account_id, requester_id, passphrase, is_test)
-        endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
-        default = {}
-
-        try:
-            shipment, = Shipment.browse(Transaction().context['active_ids'])
-        except ValueError:
-            self.raise_user_error(
-                'This wizard can be called for only one shipment at a time'
-            )
-
-        if not (
-            shipment.carrier and
-            shipment.carrier.carrier_cost_method == 'endicia'
-        ):
-            self.raise_user_error('wrong_carrier')
-
-        pic_number = shipment.tracking_number
-
-        test = endicia_credentials.is_test and 'Y' or 'N'
-
-        scan_request = SCANFormAPI(
-            pic_number=pic_number,
-            accountid=endicia_credentials.account_id,
-            requesterid=endicia_credentials.requester_id,
-            passphrase=endicia_credentials.passphrase,
-            test=test,
-        )
-        response = scan_request.send_request()
-        result = objectify_response(response)
-        if not hasattr(result, 'SCANForm'):
-            default['response'] = result.ErrorMsg
-        else:
-            Attachment.create([{
-                'name': 'SCAN%s.png' % str(result.SubmissionID),
-                'data': buffer(base64.decodestring(result.SCANForm.pyval)),
-                'resource': 'stock.shipment.out,%s' % shipment.id
-            }])
-            default['response'] = 'SCAN' + str(result.SubmissionID)
         return default
 
 

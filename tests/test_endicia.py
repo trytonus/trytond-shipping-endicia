@@ -187,9 +187,37 @@ class TestUSPSEndicia(unittest.TestCase):
             'symbol': 'INR',
         }])
 
-        company_party, = self.party.create([{
-            'name': 'Test Party'
+        country_us, = self.country.create([{
+            'name': 'United States',
+            'code': 'US',
         }])
+
+        subdivision_idaho, = self.country_subdivision.create([{
+            'name': 'Idaho',
+            'code': 'US-ID',
+            'country': country_us.id,
+            'type': 'state'
+        }])
+
+        subdivision_california, = self.country_subdivision.create([{
+            'name': 'California',
+            'code': 'US-CA',
+            'country': country_us.id,
+            'type': 'state'
+        }])
+
+        with Transaction().set_context(company=None):
+            company_party, = self.party.create([{
+                'name': 'Test Party',
+                'addresses': [('create', [{
+                    'name': 'Amine Khechfe',
+                    'street': '247 High Street',
+                    'zip': '84301',
+                    'city': 'Palo Alto',
+                    'country': country_us.id,
+                    'subdivision': subdivision_california.id,
+                }])]
+            }])
 
         # Endicia Configuration
         self.EndiciaConfiguration.create([{
@@ -278,7 +306,7 @@ class TestUSPSEndicia(unittest.TestCase):
             'products': [('create', self.template.default_products())]
         }])
 
-        product = template.products[0]
+        self.product = template.products[0]
 
         # Create party
         carrier_party, = self.party.create([{
@@ -290,83 +318,59 @@ class TestUSPSEndicia(unittest.TestCase):
             'name': 'Test Party',
         }])
 
-        carrier, = self.carrier.create([{
+        self.carrier, = self.carrier.create([{
             'party': carrier_party.id,
             'carrier_product': carrier_product.id,
             'carrier_cost_method': 'endicia',
         }])
 
-        country_us, = self.country.create([{
-            'name': 'United States',
-            'code': 'US',
-        }])
-
-        subdivision_idaho, = self.country_subdivision.create([{
-            'name': 'Idaho',
-            'code': 'US-ID',
-            'country': country_us.id,
-            'type': 'state'
-        }])
-
-        subdivision_california, = self.country_subdivision.create([{
-            'name': 'California',
-            'code': 'US-CA',
-            'country': country_us.id,
-            'type': 'state'
-        }])
-        company_address, = self.party_address.create([{
-            'name': 'Amine Khechfe',
-            'street': '247 High Street',
-            'zip': '84301',
-            'city': 'Palo Alto',
-            'country': country_us.id,
-            'subdivision': subdivision_california.id,
-            'party': self.company.party.id,
-        }])
-
-        sale_party, = self.party.create([{
+        self.sale_party, = self.party.create([{
             'name': 'Test Sale Party',
+            'addresses': [('create', [{
+                'name': 'John Doe',
+                'street': '123 Main Street',
+                'zip': '83702',
+                'city': 'Boise',
+                'country': country_us.id,
+                'subdivision': subdivision_idaho.id,
+            }])]
         }])
         self.party_contact.create([{
             'type': 'phone',
             'value': '8005763279',
-            'party': sale_party.id
+            'party': self.sale_party.id
         }])
 
-        sale_address, = self.party_address.create([{
-            'name': 'John Doe',
-            'street': '123 Main Street',
-            'zip': '83702',
-            'city': 'Boise',
-            'country': country_us.id,
-            'subdivision': subdivision_idaho.id,
-            'party': sale_party,
-        }])
+        self.create_sale(self.sale_party)
 
+    def create_sale(self, party):
+        """
+        Create and confirm sale order for party with default values.
+        """
         with Transaction().set_context(company=self.company.id):
 
             # Create sale order
             sale, = self.sale.create([{
                 'reference': 'S-1001',
                 'payment_term': self.payment_term,
-                'party': sale_party.id,
-                'invoice_address': sale_address.id,
-                'shipment_address': sale_address.id,
-                'carrier': carrier.id,
+                'party': party.id,
+                'invoice_address': party.addresses[0].id,
+                'shipment_address': party.addresses[0].id,
+                'carrier': self.carrier.id,
                 'lines': [
                     ('create', [{
                         'type': 'line',
                         'quantity': 1,
-                        'product': product,
+                        'product': self.product,
                         'unit_price': Decimal('10.00'),
                         'description': 'Test Description1',
-                        'unit': uom_kg,
+                        'unit': self.product.template.default_uom,
                     }]),
                 ]
             }])
 
             self.stock_location.write([sale.warehouse], {
-                'address': company_address.id,
+                'address': self.company.party.addresses[0].id,
             })
 
             # Confirm and process sale order
@@ -412,6 +416,64 @@ class TestUSPSEndicia(unittest.TestCase):
                 ], count=True) > 0
             )
 
+    def test_0020_shipment_bag(self):
+        """Test case for shipment bag
+        """
+        with Transaction().start(DB_NAME, USER, context=CONTEXT):
+            EndiciaShipmentBag = POOL.get('endicia.shipment.bag')
+            ShipmentOut = POOL.get('stock.shipment.out')
+
+            # Call method to create sale order
+            self.setup_defaults()
+            self.create_sale(self.sale_party)  # Create second sale and shipment
+
+            shipments = self.stock_shipment_out.search([])
+
+            # Make shipments in packed state.
+            ShipmentOut.assign(shipments)
+            ShipmentOut.pack(shipments)
+            ShipmentOut.done(shipments)
+
+            bags = EndiciaShipmentBag.search(())
+            self.assertTrue(len(bags), 1)
+            bag = bags[0]
+            self.assertFalse(bag.submission_id)
+            self.assertEqual(len(bag.shipments), 2)
+            EndiciaShipmentBag.close([bag])
+            self.assertTrue(bag.submission_id)
+
+            self.assertEqual(
+                self.ir_attachment.search([
+                    ('resource', '=', 'endicia.shipment.bag,%s' % bag.id)
+                ], count=True), 1
+            )
+
+            # Create new sale and shipment
+            self.create_sale(self.sale_party)
+
+            shipment, = self.stock_shipment_out.search([
+                ('state', '=', 'waiting')
+            ])
+
+            # Make shipment in packed state.
+            ShipmentOut.assign([shipment])
+            ShipmentOut.pack([shipment])
+            ShipmentOut.done([shipment])
+
+            self.assertEqual(EndiciaShipmentBag.search([], count=True), 2)
+
+            bag, = EndiciaShipmentBag.search([('state', '=', 'open')])
+            self.assertFalse(bag.submission_id)
+            self.assertEqual(len(bag.shipments), 1)
+            self.assertEqual(bag.shipments[0], shipment)
+            EndiciaShipmentBag.close([bag])
+            self.assertTrue(bag.submission_id)
+
+            self.assertEqual(
+                self.ir_attachment.search([
+                    ('resource', '=', 'endicia.shipment.bag,%s' % bag.id)
+                ], count=True), 1
+            )
     # TODO: Add more tests for wizards and other operations
 
 
