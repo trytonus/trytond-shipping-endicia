@@ -31,44 +31,39 @@ __all__ = [
     'BuyPostageWizardView', 'BuyPostageWizard', 'StockMove',
 ]
 
+STATES = {
+    'readonly': Eval('state') == 'done',
+}
+
 
 class ShipmentOut:
     "Shipment Out"
     __name__ = 'stock.shipment.out'
 
     endicia_mailclass = fields.Many2One(
-        'endicia.mailclass', 'MailClass', states={
-            'readonly': ~Eval('state').in_(['packed', 'done']),
-        }, depends=['state']
+        'endicia.mailclass', 'MailClass', states=STATES, depends=['state']
     )
     endicia_shipment_bag = fields.Many2One(
         'endicia.shipment.bag', 'Endicia Shipment Bag')
     endicia_label_subtype = fields.Selection([
         ('None', 'None'),
         ('Integrated', 'Integrated')
-    ], 'Label Subtype', states={
-        'readonly': ~Eval('state').in_(['packed', 'done']),
-    }, depends=['state'])
+    ], 'Label Subtype', states=STATES, depends=['state'])
     endicia_integrated_form_type = fields.Selection([
         ('Form2976', 'Form2976(Same as CN22)'),
         ('Form2976A', 'Form2976(Same as CP72)'),
-    ], 'Integrated Form Type', states={
-        'readonly': ~Eval('state').in_(['packed', 'done']),
-    }, depends=['state'])
-    endicia_include_postage = fields.Boolean('Include Postage ?', states={
-        'readonly': ~Eval('state').in_(['packed', 'done']),
-    }, depends=['state'])
+    ], 'Integrated Form Type', states=STATES, depends=['state'])
+    endicia_include_postage = fields.Boolean(
+        'Include Postage ?', states=STATES, depends=['state']
+    )
     endicia_package_type = fields.Selection(
-        ENDICIA_PACKAGE_TYPES, 'Package Content Type', states={
-            'readonly': ~Eval('state').in_(['packed', 'done']),
-        }, depends=['state']
+        ENDICIA_PACKAGE_TYPES, 'Package Content Type',
+        states=STATES, depends=['state']
     )
     is_endicia_shipping = fields.Boolean(
-        'Is Endicia Shipping', depends=['carrier']
+        'Is Endicia Shipping', readonly=True, depends=['carrier']
     )
-    tracking_number = fields.Char('Tracking Number', states={
-        'readonly': ~Eval('state').in_(['packed', 'done']),
-    })
+    tracking_number = fields.Char('Tracking Number', states=STATES)
     endicia_refunded = fields.Boolean('Refunded ?', readonly=True)
 
     @staticmethod
@@ -105,10 +100,8 @@ class ShipmentOut:
     def __setup__(cls):
         super(ShipmentOut, cls).__setup__()
         # There can be cases when people might want to use a different
-        # shipment carrier after the shipment is marked as done
-        cls.carrier.states = {
-            'readonly': ~Eval('state').in_(['packed', 'done']),
-        }
+        # shipment carrier at any state except `done`.
+        cls.carrier.states = STATES
         cls._error_messages.update({
             'warehouse_address_required': 'Warehouse address is required.',
             'mailclass_missing':
