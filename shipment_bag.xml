@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<tryton>
+    <data>
+
+        <record model="ir.ui.view" id="shipment_bag_view_form">
+            <field name="model">endicia.shipment.bag</field>
+            <field name="type">form</field>
+            <field name="name">shipment_bag_view_form</field>
+        </record>
+        <record model="ir.ui.view" id="shipment_bag_view_tree">
+            <field name="model">endicia.shipment.bag</field>
+            <field name="type">tree</field>
+            <field name="name">shipment_bag_view_tree</field>
+        </record>
+
+        <record model="ir.action.act_window" id="act_shipment_bag_win">
+            <field name="name">Endicia Shipment Bag</field>
+            <field name="res_model">endicia.shipment.bag</field>
+        </record>
+        <record model="ir.action.act_window.view" id="act_shipment_bag_win_view1">
+            <field name="sequence" eval="10"/>
+            <field name="view" ref="shipment_bag_view_tree"/>
+            <field name="act_window" ref="act_shipment_bag_win"/>
+        </record>
+        <record model="ir.action.act_window.view" id="act_shipment_bag_win_view2">
+            <field name="sequence" eval="20"/>
+            <field name="view" ref="shipment_bag_view_form"/>
+            <field name="act_window" ref="act_shipment_bag_win"/>
+        </record>
+
+        <menuitem parent="carrier.menu_carrier" action="act_shipment_bag_win"
+          id="menu_shipment_bag_win"/>
+        <record model="ir.ui.menu-res.group"
+          id="menu_warehouse_manager_shipment_bag">
+            <field name="menu" ref="menu_shipment_bag_win"/>
+            <field name="group" ref="group_warehouse_manager"/>
+        </record>
+
+    </data>
+</tryton>
