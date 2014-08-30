@@ -42,7 +42,7 @@ class Carrier:
             return Decimal('0'), None
 
         if self.carrier_cost_method != 'endicia':
-            return super(Carrier, self).get_sale_price(self)
+            return super(Carrier, self).get_sale_price()
 
         usd, = Currency.search([('code', '=', 'USD')])
         if sale:
