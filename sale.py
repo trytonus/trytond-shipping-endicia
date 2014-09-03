@@ -180,13 +180,6 @@ class Sale:
                 'endicia_mailclass': self.endicia_mailclass.id,
                 'is_endicia_shipping': self.is_endicia_shipping,
             })
-            # This is needed to update the shipment cost with
-            # the carrier on sale else the shipment cost on
-            # shipment will be generated from the default value
-            for shipment in shipments:
-                with Transaction().set_context(shipment.get_carrier_context()):
-                    shipment_cost = self.carrier.get_sale_price()
-                Shipment.write([shipment], {'cost': shipment_cost[0]})
         return shipments
 
     def get_endicia_shipping_cost(self):
