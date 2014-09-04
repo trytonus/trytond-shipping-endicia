@@ -21,6 +21,17 @@ class Carrier:
         if selection not in cls.carrier_cost_method.selection:
             cls.carrier_cost_method.selection.append(selection)
 
+    def get_rates(self):
+        """
+        Return list of tuples as:
+            [
+                (<display method name>, <rate>, <currency>, <metadata>)
+                ...
+            ]
+        """
+        # TODO: Implement
+        return []
+
     def get_sale_price(self):
         """Estimates the shipment rate for the current shipment
 
