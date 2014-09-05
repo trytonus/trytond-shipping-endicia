@@ -184,6 +184,12 @@ class Sale:
             })
         return shipments
 
+    def _get_ship_from_address(self):
+        """
+        Usually the warehouse from which you ship
+        """
+        return self.warehouse.address
+
     def get_endicia_shipping_cost(self, mailclass=None):
         """Returns the calculated shipping cost as sent by endicia
 
@@ -198,12 +204,14 @@ class Sale:
         if not mailclass and not self.endicia_mailclass:
             self.raise_user_error('mailclass_missing')
 
+        from_address = self._get_ship_from_address()
+
         calculate_postage_request = CalculatingPostageAPI(
             mailclass=mailclass or self.endicia_mailclass.value,
             weightoz=sum(map(
                 lambda line: line.get_weight_for_endicia(), self.lines
             )),
-            from_postal_code=self.warehouse.address.zip[:5],
+            from_postal_code=from_address.zip[:5],
             to_postal_code=self.shipment_address.zip[:5],
             to_country_code=self.shipment_address.country.code,
             accountid=endicia_credentials.account_id,
@@ -292,7 +300,7 @@ class SaleLine:
         """
         ProductUom = Pool().get('product.uom')
 
-        if self.product.type == 'service':
+        if self.product.type == 'service' or self.quantity <= 0:
             return 0
 
         if not self.product.weight:
