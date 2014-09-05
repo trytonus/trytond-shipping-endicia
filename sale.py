@@ -10,6 +10,8 @@ from trytond.model import ModelView, fields
 from trytond.pool import PoolMeta, Pool
 from trytond.transaction import Transaction
 from trytond.pyson import Eval
+from trytond.exceptions import UserError
+
 
 __all__ = ['Configuration', 'Sale', 'SaleLine']
 __metaclass__ = PoolMeta
@@ -182,8 +184,10 @@ class Sale:
             })
         return shipments
 
-    def get_endicia_shipping_cost(self):
+    def get_endicia_shipping_cost(self, mailclass=None):
         """Returns the calculated shipping cost as sent by endicia
+
+        :param mailclass: endicia mailclass for which cost to be fetched
 
         :returns: The shipping cost in USD
         """
@@ -191,11 +195,11 @@ class Sale:
 
         endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
 
-        if not self.endicia_mailclass:
+        if not mailclass and not self.endicia_mailclass:
             self.raise_user_error('mailclass_missing')
 
         calculate_postage_request = CalculatingPostageAPI(
-            mailclass=self.endicia_mailclass.value,
+            mailclass=mailclass or self.endicia_mailclass.value,
             weightoz=sum(map(
                 lambda line: line.get_weight_for_endicia(), self.lines
             )),
@@ -216,6 +220,59 @@ class Sale:
         return Decimal(
             objectify_response(response).PostagePrice.get('TotalAmount')
         )
+
+    def _get_endicia_mail_classes(self):
+        """
+        Returns list of endicia mailclass instances eligible for this sale
+
+        Downstream module can decide the eligibility of mail classes for sale
+        """
+        Mailclass = Pool().get('endicia.mailclass')
+
+        return Mailclass.search([])
+
+    def _make_endicia_rate_line(self, carrier, mailclass, shipment_rate):
+        """
+        Build a rate tuple from shipment_rate and mailclass
+        """
+        Currency = Pool().get('currency.currency')
+
+        usd, = Currency.search([('code', '=', 'USD')])
+        write_vals = {
+            'carrier': carrier.id,
+            'endicia_mailclass': mailclass.id,
+        }
+        return (
+            "%s %s" % (
+                carrier.carrier_product.code, mailclass.name
+            ),  # Display name
+            shipment_rate,
+            usd,
+            {},
+            write_vals
+        )
+
+    def get_endicia_shipping_rates(self, silent=True):
+        """
+        Call the rates service and get possible quotes for shipment for eligible
+        mail classes
+        """
+        Carrier = Pool().get('carrier')
+
+        carrier, = Carrier.search(['carrier_cost_method', '=', 'endicia'])
+
+        rate_lines = []
+        for mailclass in self._get_endicia_mail_classes():
+            try:
+                cost = self.get_endicia_shipping_cost(mailclass=mailclass.value)
+            except UserError:
+                if not silent:
+                    raise
+                continue
+            rate_lines.append(
+                self._make_endicia_rate_line(carrier, mailclass, cost)
+            )
+        return filter(None, rate_lines)
 
 
 class SaleLine:
