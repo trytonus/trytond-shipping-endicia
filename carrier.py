@@ -21,15 +21,25 @@ class Carrier:
         if selection not in cls.carrier_cost_method.selection:
             cls.carrier_cost_method.selection.append(selection)
 
-    def get_rates(self):
+    @classmethod
+    def get_rates(cls):
         """
         Return list of tuples as:
             [
-                (<display method name>, <rate>, <currency>, <metadata>)
+                (
+                    <display method name>, <rate>, <currency>, <metadata>,
+                    <write_vals>
+                )
                 ...
             ]
         """
-        # TODO: Implement
+        Sale = Pool().get('sale.sale')
+
+        sale = Transaction().context.get('sale')
+
+        if sale:
+            return Sale(sale).get_endicia_shipping_rates()
+
         return []
 
     def get_sale_price(self):
@@ -69,9 +79,14 @@ class EndiciaMailclass(ModelSQL, ModelView):
     "Endicia mailclass"
     __name__ = 'endicia.mailclass'
 
+    active = fields.Boolean('Active', select=True)
     name = fields.Char('Name', required=True, select=True)
     value = fields.Char('Value', required=True, select=True)
     method_type = fields.Selection([
         ('domestic', 'Domestic'),
         ('international', 'International'),
     ], 'Type', required=True, select=True)
+
+    @staticmethod
+    def default_active():
+        return True
