@@ -301,7 +301,7 @@ class SaleLine:
         ProductUom = Pool().get('product.uom')
 
         if self.product.type == 'service' or self.quantity <= 0:
-            return Decimal('0')
+            return 0
 
         if not self.product.weight:
             self.raise_user_error(
