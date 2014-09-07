@@ -50,6 +50,7 @@ class ShipmentOut:
         ('Integrated', 'Integrated')
     ], 'Label Subtype', states=STATES, depends=['state'])
     endicia_integrated_form_type = fields.Selection([
+        (None, ''),
         ('Form2976', 'Form2976(Same as CN22)'),
         ('Form2976A', 'Form2976(Same as CP72)'),
     ], 'Integrated Form Type', states=STATES, depends=['state'])
@@ -186,15 +187,16 @@ class ShipmentOut:
             customsitems.append(Element('CustomsItem', new_item))
             value += float(move.product.list_price) * move.quantity
 
+        description = ','.join([
+            move.product.name for move in self.outgoing_moves
+        ])
         request.add_data({
             'customsinfo': [
+                Element('ContentsExplanation', description),
                 Element('CustomsItems', customsitems),
                 Element('ContentsType', self.endicia_package_type)
             ]
         })
-        description = ','.join([
-            move.product.name for move in self.outgoing_moves
-        ])
         total_value = sum(map(
             lambda move: float(move.product.cost_price) * move.quantity,
             self.outgoing_moves
