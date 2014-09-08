@@ -60,7 +60,7 @@ class Address:
                 phone = phone[-10:]
         return ToAddress(
             ToName=self.name or self.party.name,
-            ToCompany=self.party and self.party.name,
+            ToCompany=self.name or self.party.name,
             ToAddress1=self.street,
             ToAddress2=self.streetbis,
             ToAddress3=None,
