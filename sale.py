@@ -38,6 +38,7 @@ class Configuration:
         ('Integrated', 'Integrated')
     ], 'Label Subtype')
     endicia_integrated_form_type = fields.Selection([
+        (None, ''),
         ('Form2976', 'Form2976(Same as CN22)'),
         ('Form2976A', 'Form2976(Same as CP72)'),
     ], 'Integrated Form Type')
@@ -53,8 +54,7 @@ class Configuration:
 
     @staticmethod
     def default_endicia_integrated_form_type():
-        # This is the default value as specified in Endicia doc
-        return 'Form2976'
+        return None
 
     @staticmethod
     def default_endicia_package_type():
