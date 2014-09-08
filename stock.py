@@ -336,7 +336,10 @@ class ShipmentOut:
             test=endicia_credentials.is_test,
         )
 
-        response = calculate_postage_request.send_request()
+        try:
+            response = calculate_postage_request.send_request()
+        except RequestError, error:
+            self.raise_user_error('error_label', error_args=(error,))
 
         return Decimal(
             objectify_response(response).PostagePrice.get('TotalAmount')
@@ -447,7 +450,11 @@ class EndiciaRefundRequestWizard(Wizard):
             passphrase=endicia_credentials.passphrase,
             test=test,
         )
-        response = refund_request.send_request()
+        try:
+            response = refund_request.send_request()
+        except RequestError, error:
+            self.raise_user_error('error_label', error_args=(error,))
+
         result = objectify_response(response)
         if str(result.RefundList.PICNumber.IsApproved) == 'YES':
             refund_approved = True
@@ -515,7 +522,10 @@ class BuyPostageWizard(Wizard):
             passphrase=endicia_credentials.passphrase,
             test=endicia_credentials.is_test,
         )
-        response = buy_postage_api.send_request()
+        try:
+            response = buy_postage_api.send_request()
+        except RequestError, error:
+            self.raise_user_error('error_label', error_args=(error,))
 
         result = objectify_response(response)
         default['company'] = self.start.company
