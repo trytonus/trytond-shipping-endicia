@@ -175,9 +175,8 @@ class ShipmentOut:
         value = 0
 
         for move in self.outgoing_moves:
-            # customs_details = (
-                # move.product.name, float(move.product.list_price)
-            # )
+            if move.quantity <= 0:
+                continue
             new_item = [
                 Element('Description', move.product.name[0:50]),
                 Element('Quantity', int(math.ceil(move.quantity))),
@@ -555,8 +554,8 @@ class StockMove:
         """
         ProductUom = Pool().get('product.uom')
 
-        if self.product.type == 'service':
-            return 0
+        if self.product.type == 'service' and self.quantity <= 0:
+            return Decimal(0)
 
         if not self.product.weight:
             self.raise_user_error(
@@ -585,4 +584,4 @@ class StockMove:
                 weight,
                 ounce
             )
-        return math.ceil(weight)
+        return Decimal(math.ceil(weight))
