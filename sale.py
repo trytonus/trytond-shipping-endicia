@@ -71,10 +71,9 @@ class Sale:
             'readonly': ~Eval('state').in_(['draft', 'quotation']),
         }, depends=['state']
     )
-    is_endicia_shipping = fields.Boolean(
-        'Is Endicia Shipping', states={
-            'readonly': ~Eval('state').in_(['draft', 'quotation']),
-        }, depends=['state', 'carrier']
+    is_endicia_shipping = fields.Function(
+        fields.Boolean('Is Endicia Shipping?', readonly=True),
+        'get_is_endicia_shipping'
     )
 
     @staticmethod
@@ -281,6 +280,12 @@ class Sale:
                 self._make_endicia_rate_line(carrier, mailclass, cost)
             )
         return filter(None, rate_lines)
+
+    def get_is_endicia_shipping(self, name):
+        """
+        Check if shipping is from USPS
+        """
+        return self.carrier and self.carrier.carrier_cost_method == 'endicia'
 
 
 class SaleLine:

@@ -61,8 +61,9 @@ class ShipmentOut:
         ENDICIA_PACKAGE_TYPES, 'Package Content Type',
         states=STATES, depends=['state']
     )
-    is_endicia_shipping = fields.Boolean(
-        'Is Endicia Shipping', readonly=True, depends=['carrier']
+    is_endicia_shipping = fields.Function(
+        fields.Boolean('Is Endicia Shipping?', readonly=True),
+        'get_is_endicia_shipping'
     )
     tracking_number = fields.Char('Tracking Number', states=STATES)
     endicia_refunded = fields.Boolean('Refunded ?', readonly=True)
@@ -343,6 +344,12 @@ class ShipmentOut:
         return Decimal(
             objectify_response(response).PostagePrice.get('TotalAmount')
         )
+
+    def get_is_endicia_shipping(self, name):
+        """
+        Check if shipping is from USPS
+        """
+        return self.carrier and self.carrier.carrier_cost_method == 'endicia'
 
 
 class GenerateEndiciaLabelMessage(ModelView):
