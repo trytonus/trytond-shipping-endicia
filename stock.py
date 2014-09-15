@@ -192,7 +192,7 @@ class ShipmentOut:
         ])
         request.add_data({
             'customsinfo': [
-                Element('ContentsExplanation', description),
+                Element('ContentsExplanation', description[:25]),
                 Element('CustomsItems', customsitems),
                 Element('ContentsType', self.endicia_package_type)
             ]
