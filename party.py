@@ -58,6 +58,12 @@ class Address:
                 phone = phone[-30:]
             else:
                 phone = phone[-10:]
+        to_country = self.country and self.country.name
+        if self.country and self.country.code == 'RU':
+            # Ugly hack to fix `Russian Federation` issue
+            # Endicia don't have any country called `Russian Federation`
+            # they call it `Russia`
+            to_country = 'Russia'
         return ToAddress(
             ToName=self.name or self.party.name,
             ToCompany=self.name or self.party.name,
@@ -68,7 +74,7 @@ class Address:
             ToCity=self.city,
             ToState=self.subdivision and self.subdivision.code[3:],
             ToPostalCode=self.zip[:5],
-            ToCountry=self.country and self.country.name,
+            ToCountry=to_country,
             ToCountryCode=self.country and self.country.code,
             ToPhone=phone,
             ToEMail=self.party.email,
