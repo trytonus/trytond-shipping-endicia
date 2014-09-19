@@ -6,7 +6,7 @@
             <field name="is_endicia_shipping"/>
             <newline/>
             <label name="endicia_mailclass"/>
-            <field name="endicia_mailclass" colspan="3"/>
+            <field name="endicia_mailclass" colspan="3" widget="selection"/>
             <newline/>
             <button name="update_endicia_shipment_cost" string="Update Shipment Cost"/>
         </page>
