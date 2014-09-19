@@ -15,6 +15,7 @@ from shipment_bag import EndiciaShipmentBag
 from carrier import Carrier, EndiciaMailclass
 from sale import Configuration, Sale, SaleLine
 from configuration import EndiciaConfiguration
+from country import Country
 
 
 def register():
@@ -32,6 +33,7 @@ def register():
         EndiciaRefundRequestWizardView,
         BuyPostageWizardView,
         EndiciaConfiguration,
+        Country,
         module='endicia_integration', type_='model'
     )
     Pool.register(
