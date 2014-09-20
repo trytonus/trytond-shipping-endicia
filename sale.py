@@ -204,15 +204,24 @@ class Sale:
             self.raise_user_error('mailclass_missing')
 
         from_address = self._get_ship_from_address()
+        to_address = self.shipment_address
+        to_zip = to_address.zip
+
+        if to_address.country and to_address.country.code == 'US':
+            # Domestic
+            to_zip = to_zip and to_zip[:5]
+        else:
+            # International
+            to_zip = to_zip and to_zip[:15]
 
         calculate_postage_request = CalculatingPostageAPI(
             mailclass=mailclass or self.endicia_mailclass.value,
             weightoz=sum(map(
                 lambda line: line.get_weight_for_endicia(), self.lines
             )),
-            from_postal_code=from_address.zip[:5],
-            to_postal_code=self.shipment_address.zip[:5],
-            to_country_code=self.shipment_address.country.code,
+            from_postal_code=from_address.zip and from_address.zip[:5],
+            to_postal_code=to_zip,
+            to_country_code=to_address.country and to_address.country.code,
             accountid=endicia_credentials.account_id,
             requesterid=endicia_credentials.requester_id,
             passphrase=endicia_credentials.passphrase,
