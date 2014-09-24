@@ -250,9 +250,7 @@ class Sale:
             'endicia_mailclass': mailclass.id,
         }
         return (
-            "%s %s" % (
-                carrier.carrier_product.code, mailclass.name
-            ),  # Display name
+            carrier._get_endicia_mailclass_name(mailclass),
             shipment_rate,
             usd,
             {},
