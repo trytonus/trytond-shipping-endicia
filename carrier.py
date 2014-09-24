@@ -56,11 +56,12 @@ class Carrier:
 
         shipment = Transaction().context.get('shipment')
         sale = Transaction().context.get('sale')
+        usd, = Currency.search([('code', '=', 'USD')])  # Default currency
 
         if Transaction().context.get('ignore_carrier_computation'):
-            return Decimal('0'), None
+            return Decimal('0'), usd.id
         if not sale and not shipment:
-            return Decimal('0'), None
+            return Decimal('0'), usd.id
 
         if self.carrier_cost_method != 'endicia':
             return super(Carrier, self).get_sale_price()
@@ -72,7 +73,7 @@ class Carrier:
         if shipment:
             return Shipment(shipment).get_endicia_shipping_cost(), usd.id
 
-        return Decimal('0'), None
+        return Decimal('0'), usd.id
 
 
 class EndiciaMailclass(ModelSQL, ModelView):

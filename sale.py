@@ -174,7 +174,11 @@ class Sale:
     def create_shipment(self, shipment_type):
         Shipment = Pool().get('stock.shipment.out')
 
-        shipments = super(Sale, self).create_shipment(shipment_type)
+        with Transaction().set_context(ignore_carrier_computation=True):
+            # disable `carrier cost computation`(default behaviour) as cost
+            # should only be computed after updating mailclass else error may
+            # occur, with improper mailclass.
+            shipments = super(Sale, self).create_shipment(shipment_type)
         if shipment_type == 'out' and shipments and self.carrier and \
                 self.carrier.carrier_cost_method == 'endicia':
             Shipment.write(shipments, {
