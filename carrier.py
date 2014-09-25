@@ -75,6 +75,17 @@ class Carrier:
 
         return Decimal('0'), usd.id
 
+    def _get_endicia_mailclass_name(self, mailclass):
+        """
+        Return endicia service name
+
+        This method can be overriden by downstream modules to change the
+        default display name of service.
+        """
+        return "%s %s" % (
+            self.carrier_product.code, mailclass.name
+        )
+
 
 class EndiciaMailclass(ModelSQL, ModelView):
     "Endicia mailclass"
