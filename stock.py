@@ -21,7 +21,7 @@ from trytond.pool import Pool, PoolMeta
 from trytond.pyson import Eval
 from trytond.rpc import RPC
 
-from .sale import ENDICIA_PACKAGE_TYPES
+from .sale import ENDICIA_PACKAGE_TYPES, MAILPIECE_SHAPES
 
 
 __metaclass__ = PoolMeta
@@ -42,6 +42,10 @@ class ShipmentOut:
 
     endicia_mailclass = fields.Many2One(
         'endicia.mailclass', 'MailClass', states=STATES, depends=['state']
+    )
+    endicia_mailpiece_shape = fields.Selection(
+        MAILPIECE_SHAPES, 'Endicia MailPiece Shape', states=STATES,
+        depends=['state']
     )
     endicia_shipment_bag = fields.Many2One(
         'endicia.shipment.bag', 'Endicia Shipment Bag')

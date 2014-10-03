@@ -24,6 +24,30 @@ ENDICIA_PACKAGE_TYPES = [
     ('Other', 'Other'),
     ('Sample', 'Sample')
 ]
+MAILPIECE_SHAPES = [
+    (None, ''),
+    ('Card', 'Card'),
+    ('Letter', 'Letter'),
+    ('Flat', 'Flat'),
+    ('Parcel', 'Parcel'),
+
+    ('LargeParcel', 'LargeParcel'),
+    ('IrregularParcel', 'IrregularParcel'),
+
+    ('FlatRateEnvelope', 'FlatRateEnvelope'),
+    ('FlatRateLegalEnvelope', 'FlatRateLegalEnvelope'),
+    ('FlatRatePaddedEnvelope', 'FlatRatePaddedEnvelope'),
+    ('FlatRateGiftCardEnvelope', 'FlatRateGiftCardEnvelope'),
+    ('FlatRateWindowEnvelope', 'FlatRateWindowEnvelope'),
+    ('FlatRateCardboardEnvelope', 'FlatRateCardboardEnvelope'),
+    ('SmallFlatRateEnvelope', 'SmallFlatRateEnvelope'),
+
+    ('SmallFlatRateBox', 'SmallFlatRateBox'),
+    ('MediumFlatRateBox', 'MediumFlatRateBox'),
+    ('LargeFlatRateBox', 'LargeFlatRateBox'),
+    ('DVDFlatRateBox', 'DVDFlatRateBox'),
+    ('LargeVideoFlatRateBox', 'LargeVideoFlatRateBox'),
+]
 
 
 class Configuration:
@@ -46,6 +70,9 @@ class Configuration:
     endicia_package_type = fields.Selection(
         ENDICIA_PACKAGE_TYPES, 'Package Content Type'
     )
+    endicia_mailpiece_shape = fields.Selection(
+        MAILPIECE_SHAPES, 'Endicia MailPiece Shape'
+    )
 
     @staticmethod
     def default_endicia_label_subtype():
@@ -61,6 +88,13 @@ class Configuration:
         # This is the default value as specified in Endicia doc
         return 'Other'
 
+    @staticmethod
+    def default_endicia_mailpiece_shape():
+        """
+        This is not a required field, so send None by default
+        """
+        return None
+
 
 class Sale:
     "Sale"
@@ -68,6 +102,11 @@ class Sale:
 
     endicia_mailclass = fields.Many2One(
         'endicia.mailclass', 'MailClass', states={
+            'readonly': ~Eval('state').in_(['draft', 'quotation']),
+        }, depends=['state']
+    )
+    endicia_mailpiece_shape = fields.Selection(
+        MAILPIECE_SHAPES, 'Endicia MailPiece Shape', states={
             'readonly': ~Eval('state').in_(['draft', 'quotation']),
         }, depends=['state']
     )
@@ -183,6 +222,7 @@ class Sale:
                 self.carrier.carrier_cost_method == 'endicia':
             Shipment.write(shipments, {
                 'endicia_mailclass': self.endicia_mailclass.id,
+                'endicia_mailpiece_shape': self.endicia_mailpiece_shape,
                 'is_endicia_shipping': self.is_endicia_shipping,
             })
         return shipments
@@ -211,6 +251,7 @@ class Sale:
 
         calculate_postage_request = CalculatingPostageAPI(
             mailclass=mailclass or self.endicia_mailclass.value,
+            MailpieceShape=self.endicia_mailpiece_shape,
             weightoz=sum(map(
                 lambda line: line.get_weight_for_endicia(), self.lines
             )),

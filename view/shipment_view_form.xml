@@ -12,6 +12,8 @@
             <field name="is_endicia_shipping"/>
             <label name="endicia_mailclass"/>
             <field name="endicia_mailclass" widget="selection"/>
+            <label name="endicia_mailpiece_shape"/>
+            <field name="endicia_mailpiece_shape"/>
             <label name="endicia_label_subtype"/>
             <field name="endicia_label_subtype"/>
             <label name="endicia_integrated_form_type"/>
