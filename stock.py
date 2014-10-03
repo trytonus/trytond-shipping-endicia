@@ -261,6 +261,7 @@ class ShipmentOut:
             partner_customer_id=self.delivery_address.id,
             partner_transaction_id=self.id,
             mail_class=mailclass,
+            MailpieceShape=self.endicia_mailpiece_shape,
             accountid=endicia_credentials.account_id,
             requesterid=endicia_credentials.requester_id,
             passphrase=endicia_credentials.passphrase,
@@ -328,6 +329,7 @@ class ShipmentOut:
 
         calculate_postage_request = CalculatingPostageAPI(
             mailclass=self.endicia_mailclass.value,
+            MailpieceShape=self.endicia_mailpiece_shape,
             weightoz=sum(map(
                 lambda move: move.get_weight_for_endicia(), self.outgoing_moves
             )),
