@@ -416,6 +416,43 @@ class TestUSPSEndicia(unittest.TestCase):
                 ], count=True) > 0
             )
 
+    def test_0015_generate_endicia_flat_label(self):
+        """Test case to generate Endicia labels.
+        """
+        with Transaction().start(DB_NAME, USER, context=CONTEXT):
+
+            # Call method to create sale order
+            self.setup_defaults()
+
+            shipment, = self.stock_shipment_out.search([])
+            self.stock_shipment_out.write([shipment], {
+                'code': str(int(time())),
+                'endicia_mailpiece_shape': 'Flat',
+            })
+
+            # Before generating labels
+            # There is no tracking number generated
+            # And no attachment cerated for labels
+            self.assertFalse(shipment.tracking_number)
+            attatchment = self.ir_attachment.search([])
+            self.assertEqual(len(attatchment), 0)
+
+            # Make shipment in packed state.
+            shipment.assign([shipment])
+            shipment.pack([shipment])
+
+            with Transaction().set_context(company=self.company.id):
+
+                # Call method to generate labels.
+                shipment.make_endicia_labels()
+
+            self.assertTrue(shipment.tracking_number)
+            self.assertTrue(
+                self.ir_attachment.search([
+                    ('resource', '=', 'stock.shipment.out,%s' % shipment.id)
+                ], count=True) > 0
+            )
+
     def test_0020_shipment_bag(self):
         """Test case for shipment bag
         """
