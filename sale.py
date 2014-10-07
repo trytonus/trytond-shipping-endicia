@@ -3,14 +3,13 @@
 from decimal import Decimal
 import math
 
-from endicia import CalculatingPostageAPI
+from endicia import CalculatingPostageAPI, PostageRatesAPI
 from endicia.tools import objectify_response
 from endicia.exceptions import RequestError
 from trytond.model import ModelView, fields
 from trytond.pool import PoolMeta, Pool
 from trytond.transaction import Transaction
 from trytond.pyson import Eval
-from trytond.exceptions import UserError
 
 
 __all__ = ['Configuration', 'Sale', 'SaleLine']
@@ -308,21 +307,58 @@ class Sale:
         mail classes
         """
         Carrier = Pool().get('carrier')
+        EndiciaConfiguration = Pool().get('endicia.configuration')
+
+        endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
 
         carrier, = Carrier.search(['carrier_cost_method', '=', 'endicia'])
 
+        from_address = self._get_ship_from_address()
+        mailclass_type = "Domestic" if self.shipment_address.country.code == 'US' \
+            else "International"
+
+        postage_rates_request = PostageRatesAPI(
+            mailclass=mailclass_type,
+            weightoz=sum(map(
+                lambda line: line.get_weight_for_endicia(), self.lines
+            )),
+            from_postal_code=from_address.zip[:5],
+            to_postal_code=self.shipment_address.zip[:5],
+            to_country_code=self.shipment_address.country.code,
+            accountid=endicia_credentials.account_id,
+            requesterid=endicia_credentials.requester_id,
+            passphrase=endicia_credentials.passphrase,
+            test=endicia_credentials.is_test,
+        )
+
+        try:
+            response = postage_rates_request.send_request()
+            response = objectify_response(response)
+        except RequestError, e:
+            self.raise_user_error(unicode(e))
+
+        allowed_mailclasses = {
+            mailclass.name: mailclass
+            for mailclass in self._get_endicia_mail_classes()
+        }
+
         rate_lines = []
-        for mailclass in self._get_endicia_mail_classes():
-            try:
-                cost = self.get_endicia_shipping_cost(mailclass=mailclass.value)
-            except UserError:
-                if not silent:
-                    raise
+        for postage_price in response.PostagePrice:
+            postage = postage_price.Postage
+            mailclass = allowed_mailclasses.get(postage.MailService)
+            if not mailclass:
                 continue
+            cost = self.fetch_endicia_postage_rate(postage)
             rate_lines.append(
                 self._make_endicia_rate_line(carrier, mailclass, cost)
             )
         return filter(None, rate_lines)
+
+    def fetch_endicia_postage_rate(self, postage):
+        """
+        Fetch postage rate from response
+        """
+        return Decimal(postage.get('TotalAmount'))
 
     def get_is_endicia_shipping(self, name):
         """
