@@ -316,6 +316,12 @@ class ShipmentOut:
 
             return tracking_number
 
+    def _get_ship_from_address(self):
+        """
+        Usually the warehouse from which you ship
+        """
+        return self.warehouse.address
+
     def get_endicia_shipping_cost(self):
         """Returns the calculated shipping cost as sent by endicia
 
@@ -327,15 +333,26 @@ class ShipmentOut:
         if not self.endicia_mailclass:
             self.raise_user_error('mailclass_missing')
 
+        from_address = self._get_ship_from_address()
+        to_address = self.delivery_address
+        to_zip = to_address.zip
+
+        if to_address.country and to_address.country.code == 'US':
+            # Domestic
+            to_zip = to_zip and to_zip[:5]
+        else:
+            # International
+            to_zip = to_zip and to_zip[:15]
+
         calculate_postage_request = CalculatingPostageAPI(
             mailclass=self.endicia_mailclass.value,
             MailpieceShape=self.endicia_mailpiece_shape,
             weightoz=sum(map(
                 lambda move: move.get_weight_for_endicia(), self.outgoing_moves
             )),
-            from_postal_code=self.warehouse.address.zip[:5],
-            to_postal_code=self.delivery_address.zip[:5],
-            to_country_code=self.delivery_address.country.code,
+            from_postal_code=from_address.zip and from_address.zip[:5],
+            to_postal_code=to_zip,
+            to_country_code=to_address.country and to_address.country.code,
             accountid=endicia_credentials.account_id,
             requesterid=endicia_credentials.requester_id,
             passphrase=endicia_credentials.passphrase,

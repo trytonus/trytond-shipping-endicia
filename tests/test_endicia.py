@@ -245,7 +245,7 @@ class TestUSPSEndicia(unittest.TestCase):
             'endicia_label_subtype': 'Integrated',
             'endicia_integrated_form_type': 'Form2976',
             'endicia_mailclass': endicia_mailclass.id,
-            'endicia_include_postage':  True,
+            'endicia_include_postage': True,
         })
 
         self.User.write(
