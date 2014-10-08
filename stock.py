@@ -28,7 +28,7 @@ __metaclass__ = PoolMeta
 __all__ = [
     'ShipmentOut', 'GenerateEndiciaLabelMessage', 'GenerateEndiciaLabel',
     'EndiciaRefundRequestWizardView', 'EndiciaRefundRequestWizard',
-    'BuyPostageWizardView', 'BuyPostageWizard', 'StockMove',
+    'BuyPostageWizardView', 'BuyPostageWizard',
 ]
 
 STATES = {
@@ -69,8 +69,20 @@ class ShipmentOut:
         fields.Boolean('Is Endicia Shipping?', readonly=True),
         'get_is_endicia_shipping'
     )
-    tracking_number = fields.Char('Tracking Number', states=STATES)
     endicia_refunded = fields.Boolean('Refunded ?', readonly=True)
+
+    def _get_weight_uom(self):
+        """
+        Returns uom for endicia
+        """
+        UOM = Pool().get('product.uom')
+
+        if self.is_endicia_shipping:
+
+            # Endicia by default uses this uom
+            return UOM.search([('symbol', '=', 'oz')])[0]
+
+        return super(ShipmentOut, self)._get_weight_uom()
 
     @staticmethod
     def default_endicia_mailclass():
@@ -185,7 +197,7 @@ class ShipmentOut:
             new_item = [
                 Element('Description', move.product.name[0:50]),
                 Element('Quantity', int(math.ceil(move.quantity))),
-                Element('Weight', int(move.get_weight_for_endicia())),
+                Element('Weight', int(move.get_weight(self.weight_uom))),
                 Element('Value', float(move.product.list_price)),
             ]
             customsitems.append(Element('CustomsItem', new_item))
@@ -252,12 +264,9 @@ class ShipmentOut:
             ImageRotation="Rotate270",
         )
 
-        move_weights = map(
-            lambda move: move.get_weight_for_endicia(), self.outgoing_moves
-        )
         shipping_label_request = ShippingLabelAPI(
             label_request=label_request,
-            weight_oz=sum(move_weights),
+            weight_oz=self.package_weight,
             partner_customer_id=self.delivery_address.id,
             partner_transaction_id=self.id,
             mail_class=mailclass,
@@ -347,9 +356,7 @@ class ShipmentOut:
         calculate_postage_request = CalculatingPostageAPI(
             mailclass=self.endicia_mailclass.value,
             MailpieceShape=self.endicia_mailpiece_shape,
-            weightoz=sum(map(
-                lambda move: move.get_weight_for_endicia(), self.outgoing_moves
-            )),
+            weightoz=self.package_weight,
             from_postal_code=from_address.zip and from_address.zip[:5],
             to_postal_code=to_zip,
             to_country_code=to_address.country and to_address.country.code,
@@ -562,56 +569,3 @@ class BuyPostageWizard(Wizard):
         default['response'] = str(result.ErrorMessage) \
             if hasattr(result, 'ErrorMessage') else 'Success'
         return default
-
-
-class StockMove:
-    "Stock move"
-    __name__ = "stock.move"
-
-    @classmethod
-    def __setup__(cls):
-        super(StockMove, cls).__setup__()
-        cls._error_messages.update({
-            'weight_required':
-                'Weight for product %s in stock move is missing',
-        })
-
-    def get_weight_for_endicia(self):
-        """
-        Returns weight as required for endicia.
-
-        Upward rounded integral values in Oz
-        """
-        ProductUom = Pool().get('product.uom')
-
-        if self.product.type == 'service' and self.quantity <= 0:
-            return Decimal(0)
-
-        if not self.product.weight:
-            self.raise_user_error(
-                'weight_required',
-                error_args=(self.product.name,)
-            )
-
-        # Find the quantity in the default uom of the product as the weight
-        # is for per unit in that uom
-        if self.uom != self.product.default_uom:
-            quantity = ProductUom.compute_qty(
-                self.uom,
-                self.quantity,
-                self.product.default_uom
-            )
-        else:
-            quantity = self.quantity
-
-        weight = float(self.product.weight) * quantity
-
-        # Endicia by default uses oz for weight purposes
-        if self.product.weight_uom.symbol != 'oz':
-            ounce, = ProductUom.search([('symbol', '=', 'oz')])
-            weight = ProductUom.compute_qty(
-                self.product.weight_uom,
-                weight,
-                ounce
-            )
-        return Decimal(math.ceil(weight))
