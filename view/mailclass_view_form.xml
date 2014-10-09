@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<form string="Endicia Mailclass">
+    <label name="name"/>
+    <field name="name"/>
+    <label name="value"/>
+    <field name="value"/>
+    <label name="method_type"/>
+    <field name="method_type"/>
+    <label name="display_name"/>
+    <field name="display_name"/>
+</form>

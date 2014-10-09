@@ -26,50 +26,39 @@ from trytond.tests.test_tryton import POOL, DB_NAME, USER, CONTEXT, \
     test_view, test_depends
 from trytond.transaction import Transaction
 from trytond.config import CONFIG
+from trytond.error import UserError
 CONFIG['data_path'] = '.'
 
 
-class TestUSPSEndicia(unittest.TestCase):
-    """Test USPS with Endicia.
+class BaseTestCase(unittest.TestCase):
     """
-
+    Base test case for trytond-endicia-integration.
+    """
     def setUp(self):
         trytond.tests.test_tryton.install_module('endicia_integration')
-        self.sale = POOL.get('sale.sale')
-        self.sale_config = POOL.get('sale.configuration')
-        self.endicia_mailclass = POOL.get('endicia.mailclass')
-        self.product = POOL.get('product.product')
-        self.uom = POOL.get('product.uom')
-        self.account = POOL.get('account.account')
-        self.category = POOL.get('product.category')
-        self.carrier = POOL.get('carrier')
-        self.party = POOL.get('party.party')
-        self.party_contact = POOL.get('party.contact_mechanism')
-        self.payment_term = POOL.get('account.invoice.payment_term')
-        self.country = POOL.get('country.country')
-        self.country_subdivision = POOL.get('country.subdivision')
-        self.sale = POOL.get('sale.sale')
-        self.party_address = POOL.get('party.address')
-        self.stock_location = POOL.get('stock.location')
-        self.stock_shipment_out = POOL.get('stock.shipment.out')
-        self.currency = POOL.get('currency.currency')
-        self.company = POOL.get('company.company')
-        self.ir_attachment = POOL.get('ir.attachment')
+        self.Sale = POOL.get('sale.sale')
+        self.SaleConfig = POOL.get('sale.configuration')
+        self.EndiciaMailclass = POOL.get('endicia.mailclass')
+        self.Product = POOL.get('product.product')
+        self.Uom = POOL.get('product.uom')
+        self.Account = POOL.get('account.account')
+        self.Category = POOL.get('product.category')
+        self.Carrier = POOL.get('carrier')
+        self.Party = POOL.get('party.party')
+        self.PartyContact = POOL.get('party.contact_mechanism')
+        self.PaymentTerm = POOL.get('account.invoice.payment_term')
+        self.Country = POOL.get('country.country')
+        self.Country_Subdivision = POOL.get('country.subdivision')
+        self.Sale = POOL.get('sale.sale')
+        self.PartyAddress = POOL.get('party.address')
+        self.StockLocation = POOL.get('stock.location')
+        self.StockShipmentOut = POOL.get('stock.shipment.out')
+        self.Currency = POOL.get('currency.currency')
+        self.Company = POOL.get('company.company')
+        self.IrAttachment = POOL.get('ir.attachment')
         self.User = POOL.get('res.user')
-        self.template = POOL.get('product.template')
+        self.Template = POOL.get('product.template')
         self.EndiciaConfiguration = POOL.get('endicia.configuration')
-
-    def test0005views(self):
-        '''
-        Test views.
-        '''
-        test_view('endicia_integration')
-
-    def test0006depends(self):
-        '''
-        Test depends.
-        '''
-        test_depends()
 
     def _create_coa_minimal(self, company):
         """Create a minimal chart of accounts
@@ -176,30 +165,30 @@ class TestUSPSEndicia(unittest.TestCase):
         """Method to setup defaults
         """
         # Create currency
-        currency, = self.currency.create([{
+        self.currency, = self.Currency.create([{
             'name': 'United Stated Dollar',
             'code': 'USD',
             'symbol': 'USD',
         }])
-        self.currency.create([{
+        self.Currency.create([{
             'name': 'Indian Rupee',
             'code': 'INR',
             'symbol': 'INR',
         }])
 
-        country_us, = self.country.create([{
+        country_us, = self.Country.create([{
             'name': 'United States',
             'code': 'US',
         }])
 
-        subdivision_idaho, = self.country_subdivision.create([{
+        subdivision_idaho, = self.Country_Subdivision.create([{
             'name': 'Idaho',
             'code': 'US-ID',
             'country': country_us.id,
             'type': 'state'
         }])
 
-        subdivision_california, = self.country_subdivision.create([{
+        subdivision_california, = self.Country_Subdivision.create([{
             'name': 'California',
             'code': 'US-CA',
             'country': country_us.id,
@@ -207,7 +196,7 @@ class TestUSPSEndicia(unittest.TestCase):
         }])
 
         with Transaction().set_context(company=None):
-            company_party, = self.party.create([{
+            company_party, = self.Party.create([{
                 'name': 'Test Party',
                 'addresses': [('create', [{
                     'name': 'Amine Khechfe',
@@ -226,22 +215,22 @@ class TestUSPSEndicia(unittest.TestCase):
             'passphrase': 'PassPhrase',
             'is_test': True,
         }])
-        self.company, = self.company.create([{
+        self.company, = self.Company.create([{
             'party': company_party.id,
-            'currency': currency.id,
+            'currency': self.currency.id,
         }])
-        self.party_contact.create([{
+        self.PartyContact.create([{
             'type': 'phone',
             'value': '8005551212',
             'party': self.company.party.id
         }])
 
         # Sale configuration
-        endicia_mailclass, = self.endicia_mailclass.search([
+        endicia_mailclass, = self.EndiciaMailclass.search([
             ('value', '=', 'First')
         ])
 
-        self.sale_config.write(self.sale_config(1), {
+        self.SaleConfig.write(self.SaleConfig(1), {
             'endicia_label_subtype': 'Integrated',
             'endicia_integrated_form_type': 'Form2976',
             'endicia_mailclass': endicia_mailclass.id,
@@ -261,20 +250,20 @@ class TestUSPSEndicia(unittest.TestCase):
         self._create_coa_minimal(company=self.company)
         self.payment_term, = self._create_payment_term()
 
-        account_revenue, = self.account.search([
+        account_revenue, = self.Account.search([
             ('kind', '=', 'revenue')
         ])
 
         # Create product category
-        category, = self.category.create([{
+        category, = self.Category.create([{
             'name': 'Test Category',
         }])
 
-        uom_kg, = self.uom.search([('symbol', '=', 'kg')])
-        uom_pound, = self.uom.search([('symbol', '=', 'lb')])
+        uom_kg, = self.Uom.search([('symbol', '=', 'kg')])
+        uom_pound, = self.Uom.search([('symbol', '=', 'lb')])
 
         # Carrier Carrier Product
-        carrier_product_template, = self.template.create([{
+        carrier_product_template, = self.Template.create([{
             'name': 'Test Carrier Product',
             'category': category.id,
             'type': 'service',
@@ -285,13 +274,13 @@ class TestUSPSEndicia(unittest.TestCase):
             'default_uom': uom_kg,
             'cost_price_method': 'fixed',
             'account_revenue': account_revenue.id,
-            'products': [('create', self.template.default_products())]
+            'products': [('create', self.Template.default_products())]
         }])
 
-        carrier_product = carrier_product_template.products[0]
+        self.carrier_product = carrier_product_template.products[0]
 
         # Create product
-        template, = self.template.create([{
+        template, = self.Template.create([{
             'name': 'Test Product',
             'category': category.id,
             'type': 'goods',
@@ -303,28 +292,28 @@ class TestUSPSEndicia(unittest.TestCase):
             'account_revenue': account_revenue.id,
             'weight': .5,
             'weight_uom': uom_pound.id,
-            'products': [('create', self.template.default_products())]
+            'products': [('create', self.Template.default_products())]
         }])
 
         self.product = template.products[0]
 
         # Create party
-        carrier_party, = self.party.create([{
+        carrier_party, = self.Party.create([{
             'name': 'Test Party',
         }])
 
         # Create party
-        carrier_party, = self.party.create([{
+        carrier_party, = self.Party.create([{
             'name': 'Test Party',
         }])
 
-        self.carrier, = self.carrier.create([{
+        self.carrier, = self.Carrier.create([{
             'party': carrier_party.id,
-            'carrier_product': carrier_product.id,
+            'carrier_product': self.carrier_product.id,
             'carrier_cost_method': 'endicia',
         }])
 
-        self.sale_party, = self.party.create([{
+        self.sale_party, = self.Party.create([{
             'name': 'Test Sale Party',
             'addresses': [('create', [{
                 'name': 'John Doe',
@@ -335,13 +324,13 @@ class TestUSPSEndicia(unittest.TestCase):
                 'subdivision': subdivision_idaho.id,
             }])]
         }])
-        self.party_contact.create([{
+        self.PartyContact.create([{
             'type': 'phone',
             'value': '8005763279',
             'party': self.sale_party.id
         }])
 
-        self.create_sale(self.sale_party)
+        self.sale = self.create_sale(self.sale_party)
 
     def create_sale(self, party):
         """
@@ -350,7 +339,7 @@ class TestUSPSEndicia(unittest.TestCase):
         with Transaction().set_context(company=self.company.id):
 
             # Create sale order
-            sale, = self.sale.create([{
+            sale, = self.Sale.create([{
                 'reference': 'S-1001',
                 'payment_term': self.payment_term,
                 'party': party.id,
@@ -369,16 +358,36 @@ class TestUSPSEndicia(unittest.TestCase):
                 ]
             }])
 
-            self.stock_location.write([sale.warehouse], {
+            self.StockLocation.write([sale.warehouse], {
                 'address': self.company.party.addresses[0].id,
             })
 
             # Confirm and process sale order
             self.assertEqual(len(sale.lines), 1)
-            self.sale.quote([sale])
+            self.Sale.quote([sale])
             self.assertEqual(len(sale.lines), 2)
-            self.sale.confirm([sale])
-            self.sale.process([sale])
+            self.Sale.confirm([sale])
+            self.Sale.process([sale])
+
+            return sale
+
+
+class TestUSPSEndicia(BaseTestCase):
+    """
+    Test USPS with Endicia.
+    """
+
+    def test0005views(self):
+        '''
+        Test views.
+        '''
+        test_view('endicia_integration')
+
+    def test0006depends(self):
+        '''
+        Test depends.
+        '''
+        test_depends()
 
     def test_0010_generate_endicia_gss_labels(self):
         """Test case to generate Endicia labels.
@@ -388,8 +397,8 @@ class TestUSPSEndicia(unittest.TestCase):
             # Call method to create sale order
             self.setup_defaults()
 
-            shipment, = self.stock_shipment_out.search([])
-            self.stock_shipment_out.write([shipment], {
+            shipment, = self.StockShipmentOut.search([])
+            self.StockShipmentOut.write([shipment], {
                 'code': str(int(time())),
             })
 
@@ -397,7 +406,7 @@ class TestUSPSEndicia(unittest.TestCase):
             # There is no tracking number generated
             # And no attachment cerated for labels
             self.assertFalse(shipment.tracking_number)
-            attatchment = self.ir_attachment.search([])
+            attatchment = self.IrAttachment.search([])
             self.assertEqual(len(attatchment), 0)
 
             # Make shipment in packed state.
@@ -411,7 +420,7 @@ class TestUSPSEndicia(unittest.TestCase):
 
             self.assertTrue(shipment.tracking_number)
             self.assertTrue(
-                self.ir_attachment.search([
+                self.IrAttachment.search([
                     ('resource', '=', 'stock.shipment.out,%s' % shipment.id)
                 ], count=True) > 0
             )
@@ -424,8 +433,8 @@ class TestUSPSEndicia(unittest.TestCase):
             # Call method to create sale order
             self.setup_defaults()
 
-            shipment, = self.stock_shipment_out.search([])
-            self.stock_shipment_out.write([shipment], {
+            shipment, = self.StockShipmentOut.search([])
+            self.StockShipmentOut.write([shipment], {
                 'code': str(int(time())),
                 'endicia_mailpiece_shape': 'Flat',
             })
@@ -434,7 +443,7 @@ class TestUSPSEndicia(unittest.TestCase):
             # There is no tracking number generated
             # And no attachment cerated for labels
             self.assertFalse(shipment.tracking_number)
-            attatchment = self.ir_attachment.search([])
+            attatchment = self.IrAttachment.search([])
             self.assertEqual(len(attatchment), 0)
 
             # Make shipment in packed state.
@@ -448,7 +457,7 @@ class TestUSPSEndicia(unittest.TestCase):
 
             self.assertTrue(shipment.tracking_number)
             self.assertTrue(
-                self.ir_attachment.search([
+                self.IrAttachment.search([
                     ('resource', '=', 'stock.shipment.out,%s' % shipment.id)
                 ], count=True) > 0
             )
@@ -464,7 +473,7 @@ class TestUSPSEndicia(unittest.TestCase):
             self.setup_defaults()
             self.create_sale(self.sale_party)  # Create second sale and shipment
 
-            shipments = self.stock_shipment_out.search([])
+            shipments = self.StockShipmentOut.search([])
 
             # Make shipments in packed state.
             ShipmentOut.assign(shipments)
@@ -480,7 +489,7 @@ class TestUSPSEndicia(unittest.TestCase):
             self.assertTrue(bag.submission_id)
 
             self.assertEqual(
-                self.ir_attachment.search([
+                self.IrAttachment.search([
                     ('resource', '=', 'endicia.shipment.bag,%s' % bag.id)
                 ], count=True), 1
             )
@@ -488,7 +497,7 @@ class TestUSPSEndicia(unittest.TestCase):
             # Create new sale and shipment
             self.create_sale(self.sale_party)
 
-            shipment, = self.stock_shipment_out.search([
+            shipment, = self.StockShipmentOut.search([
                 ('state', '=', 'waiting')
             ])
 
@@ -507,11 +516,35 @@ class TestUSPSEndicia(unittest.TestCase):
             self.assertTrue(bag.submission_id)
 
             self.assertEqual(
-                self.ir_attachment.search([
+                self.IrAttachment.search([
                     ('resource', '=', 'endicia.shipment.bag,%s' % bag.id)
                 ], count=True), 1
             )
     # TODO: Add more tests for wizards and other operations
+
+    def test_0025_endicia_readonly(self):
+        """
+        Test that endicia-mailclass records are readonly.
+        """
+        with Transaction().start(DB_NAME, USER, context=CONTEXT):
+            # Calling method to setup defaults.
+            self.setup_defaults()
+
+            endicia_mailclass, = self.EndiciaMailclass.search([
+                ('value', '=', 'First')
+            ])
+
+            # Following lines will test thrice, each
+            # with a different `argument` value.
+            for argument in [
+                    {'name': 'None'},
+                    {'value': 'Value'},
+                    {'method_type': 'international'}
+            ]:
+                self.assertRaises(
+                    UserError, self.EndiciaMailclass.write,
+                    [endicia_mailclass], argument
+                )
 
 
 def suite():

@@ -83,7 +83,7 @@ class Carrier:
         default display name of service.
         """
         return "%s %s" % (
-            self.carrier_product.code, mailclass.name
+            self.carrier_product.code, mailclass.display_name or mailclass.name
         )
 
 
@@ -92,13 +92,21 @@ class EndiciaMailclass(ModelSQL, ModelView):
     __name__ = 'endicia.mailclass'
 
     active = fields.Boolean('Active', select=True)
-    name = fields.Char('Name', required=True, select=True)
-    value = fields.Char('Value', required=True, select=True)
+    name = fields.Char('Name', required=True, select=True, readonly=True)
+    value = fields.Char('Value', required=True, select=True, readonly=True)
     method_type = fields.Selection([
         ('domestic', 'Domestic'),
         ('international', 'International'),
-    ], 'Type', required=True, select=True)
+    ], 'Type', required=True, select=True, readonly=True)
+    display_name = fields.Char('Display Name', select=True)
 
     @staticmethod
     def default_active():
         return True
+
+    @staticmethod
+    def check_xml_record(records, values):
+        if 'display_name' in values and len(values) == 1:
+            # Allow editing if display_name is the only key in values
+            return True
+        return False
