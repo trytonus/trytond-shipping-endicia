@@ -433,8 +433,8 @@ class TestUSPSEndicia(BaseTestCase):
             # Call method to create sale order
             self.setup_defaults()
 
-            shipment, = self.stock_shipment_out.search([])
-            self.stock_shipment_out.write([shipment], {
+            shipment, = self.StockShipmentOut.search([])
+            self.StockShipmentOut.write([shipment], {
                 'code': str(int(time())),
                 'endicia_mailpiece_shape': 'Flat',
             })
@@ -443,7 +443,7 @@ class TestUSPSEndicia(BaseTestCase):
             # There is no tracking number generated
             # And no attachment cerated for labels
             self.assertFalse(shipment.tracking_number)
-            attatchment = self.ir_attachment.search([])
+            attatchment = self.IrAttachment.search([])
             self.assertEqual(len(attatchment), 0)
 
             # Make shipment in packed state.
@@ -457,7 +457,7 @@ class TestUSPSEndicia(BaseTestCase):
 
             self.assertTrue(shipment.tracking_number)
             self.assertTrue(
-                self.ir_attachment.search([
+                self.IrAttachment.search([
                     ('resource', '=', 'stock.shipment.out,%s' % shipment.id)
                 ], count=True) > 0
             )
