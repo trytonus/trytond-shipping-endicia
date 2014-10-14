@@ -277,8 +277,8 @@ class Sale:
         except RequestError, e:
             self.raise_user_error(unicode(e))
 
-        return Decimal(
-            objectify_response(response).PostagePrice.get('TotalAmount')
+        return self.fetch_endicia_postage_rate(
+            objectify_response(response).PostagePrice
         )
 
     def _get_endicia_mail_classes(self):
@@ -357,17 +357,17 @@ class Sale:
             mailclass = allowed_mailclasses.get(postage.MailService)
             if not mailclass:
                 continue
-            cost = self.fetch_endicia_postage_rate(postage)
+            cost = self.fetch_endicia_postage_rate(postage_price)
             rate_lines.append(
                 self._make_endicia_rate_line(carrier, mailclass, cost)
             )
         return filter(None, rate_lines)
 
-    def fetch_endicia_postage_rate(self, postage):
+    def fetch_endicia_postage_rate(self, postage_price_node):
         """
         Fetch postage rate from response
         """
-        return Decimal(postage.get('TotalAmount'))
+        return Decimal(postage_price_node.get('TotalAmount'))
 
     def get_is_endicia_shipping(self, name):
         """
