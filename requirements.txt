@@ -1,0 +1,2 @@
+# Install trytond-shipping from develop
+https://github.com/openlabs/trytond-shipping/archive/develop.tar.gz
