@@ -87,3 +87,34 @@ class CarrierTestCase(BaseTestCase):
                 self.carrier.get_sale_price(),
                 (self.sale.get_endicia_shipping_cost(), self.currency.id)
             )
+
+    def test_0010_check_sale_package_uom(self):
+        """
+        Check sale package weight uom
+        """
+        with Transaction().start(DB_NAME, USER, context=CONTEXT):
+            self.setup_defaults()
+
+            with Transaction().set_context(company=self.company.id):
+
+                party = self.sale_party
+
+                # Create sale order
+                sale, = self.Sale.create([{
+                    'reference': 'S-1001',
+                    'payment_term': self.payment_term,
+                    'party': party.id,
+                    'invoice_address': party.addresses[0].id,
+                    'shipment_address': party.addresses[0].id,
+                    'carrier': self.carrier.id,
+                }])
+
+                self.assertEqual(sale.carrier.carrier_cost_method, 'endicia')
+
+                self.assertEqual(sale.weight_uom.symbol, 'oz')
+
+                # Should pick default uom if no carrier defined
+                sale.carrier = None
+                sale.save()
+
+                self.assertEqual(sale.weight_uom.symbol, 'lb')

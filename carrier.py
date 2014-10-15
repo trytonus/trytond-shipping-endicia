@@ -21,8 +21,7 @@ class Carrier:
         if selection not in cls.carrier_cost_method.selection:
             cls.carrier_cost_method.selection.append(selection)
 
-    @classmethod
-    def get_rates(cls):
+    def get_rates(self):
         """
         Return list of tuples as:
             [
@@ -37,10 +36,10 @@ class Carrier:
 
         sale = Transaction().context.get('sale')
 
-        if sale:
+        if sale and self.carrier_cost_method == 'endicia':
             return Sale(sale).get_endicia_shipping_rates()
 
-        return []
+        return super(Carrier, self).get_rates()
 
     def get_sale_price(self):
         """Estimates the shipment rate for the current shipment

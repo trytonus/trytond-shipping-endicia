@@ -9,11 +9,11 @@ from party import Address
 from stock import (
     ShipmentOut, GenerateEndiciaLabelMessage, GenerateEndiciaLabel,
     EndiciaRefundRequestWizardView, EndiciaRefundRequestWizard,
-    BuyPostageWizardView, BuyPostageWizard, StockMove
+    BuyPostageWizardView, BuyPostageWizard
 )
 from shipment_bag import EndiciaShipmentBag
 from carrier import Carrier, EndiciaMailclass
-from sale import Configuration, Sale, SaleLine
+from sale import Configuration, Sale
 from configuration import EndiciaConfiguration
 from country import Country
 
@@ -26,8 +26,6 @@ def register():
         Configuration,
         Sale,
         EndiciaShipmentBag,
-        SaleLine,
-        StockMove,
         ShipmentOut,
         GenerateEndiciaLabelMessage,
         EndiciaRefundRequestWizardView,
