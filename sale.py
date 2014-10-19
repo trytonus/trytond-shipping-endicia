@@ -326,6 +326,7 @@ class Sale:
         mail classes
         """
         Carrier = Pool().get('carrier')
+        UOM = Pool().get('product.uom')
         EndiciaConfiguration = Pool().get('endicia.configuration')
 
         endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
@@ -336,9 +337,11 @@ class Sale:
         mailclass_type = "Domestic" if self.shipment_address.country.code == 'US' \
             else "International"
 
+        uom_oz = UOM.search([('symbol', '=', 'oz')])[0]
+
         postage_rates_request = PostageRatesAPI(
             mailclass=mailclass_type,
-            weightoz=self.package_weight,
+            weightoz=self._get_package_weight(uom_oz),
             from_postal_code=from_address.zip[:5],
             to_postal_code=self.shipment_address.zip[:5],
             to_country_code=self.shipment_address.country.code,
