@@ -7,54 +7,13 @@ this repository contains the full copyright notices and license terms. -->
             <field name="model">sale.configuration</field>
             <field name="type">form</field>
             <field name="inherit" ref="sale.sale_configuration_view_form"/>
-            <field name="arch" type="xml">
-                <![CDATA[
-                <data>
-                    <xpath expr="/form/field[@name='sale_shipment_cost_method']"
-                            position="after">
-                        <newline/>
-                        <separator string="Endicia [USPS] Defaults" colspan="4" id="endicia"/>
-                        <label name="endicia_mailclass"/>
-                        <field name="endicia_mailclass"/>
-                        <label name="endicia_label_subtype"/>
-                        <field name="endicia_label_subtype"/>
-                        <label name="endicia_integrated_form_type"/>
-                        <field name="endicia_integrated_form_type"/>
-                        <label name="endicia_package_type"/>
-                        <field name="endicia_package_type"/>
-                        <label name="endicia_include_postage"/>
-                        <field name="endicia_include_postage"/>
-                    </xpath>
-                </data>
-                ]]>
-            </field>
+            <field name="name">sale_configuration_view_form</field>
         </record>
-
         <record model="ir.ui.view" id="sale_view_form">
             <field name="model">sale.sale</field>
             <field name="type">form</field>
             <field name="inherit" ref="sale.sale_view_form"/>
-            <field name="arch" type="xml">
-                <![CDATA[
-                <data>
-                    <xpath expr="/form/notebook/page[@id=&quot;shipments&quot;]"
-                        position="after">
-                        <page string="Endicia [USPS]"
-                            states="{'invisible': Not(Bool(Eval('is_endicia_shipping')))}"
-                            id="endicia">
-                            <label name="is_endicia_shipping"/>
-                            <field name="is_endicia_shipping"/>
-                            <newline/>
-                            <label name="endicia_mailclass"/>
-                            <field name="endicia_mailclass" colspan="3"/>
-                            <newline/>
-                            <button name="update_endicia_shipment_cost" string="Update Shipment Cost"/>
-                        </page>
-                    </xpath>
-                </data>
-                ]]>
-            </field>
+            <field name="name">sale_view_form</field>
         </record>
-
     </data>
 </tryton>

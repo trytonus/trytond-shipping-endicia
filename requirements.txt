@@ -1,1 +1,2 @@
-git+ssh://git@github.com/openlabs/py-endicia.git
+# Install trytond-shipping from develop
+https://github.com/openlabs/trytond-shipping/archive/develop.tar.gz

@@ -21,6 +21,26 @@ class Carrier:
         if selection not in cls.carrier_cost_method.selection:
             cls.carrier_cost_method.selection.append(selection)
 
+    def get_rates(self):
+        """
+        Return list of tuples as:
+            [
+                (
+                    <display method name>, <rate>, <currency>, <metadata>,
+                    <write_vals>
+                )
+                ...
+            ]
+        """
+        Sale = Pool().get('sale.sale')
+
+        sale = Transaction().context.get('sale')
+
+        if sale and self.carrier_cost_method == 'endicia':
+            return Sale(sale).get_endicia_shipping_rates()
+
+        return super(Carrier, self).get_rates()
+
     def get_sale_price(self):
         """Estimates the shipment rate for the current shipment
 
@@ -35,14 +55,15 @@ class Carrier:
 
         shipment = Transaction().context.get('shipment')
         sale = Transaction().context.get('sale')
+        usd, = Currency.search([('code', '=', 'USD')])  # Default currency
 
         if Transaction().context.get('ignore_carrier_computation'):
-            return Decimal('0'), None
+            return Decimal('0'), usd.id
         if not sale and not shipment:
-            return Decimal('0'), None
+            return Decimal('0'), usd.id
 
         if self.carrier_cost_method != 'endicia':
-            return super(Carrier, self).get_sale_price(self)
+            return super(Carrier, self).get_sale_price()
 
         usd, = Currency.search([('code', '=', 'USD')])
         if sale:
@@ -51,16 +72,40 @@ class Carrier:
         if shipment:
             return Shipment(shipment).get_endicia_shipping_cost(), usd.id
 
-        return Decimal('0'), None
+        return Decimal('0'), usd.id
+
+    def _get_endicia_mailclass_name(self, mailclass):
+        """
+        Return endicia service name
+
+        This method can be overriden by downstream modules to change the
+        default display name of service.
+        """
+        return "%s %s" % (
+            self.carrier_product.code, mailclass.display_name or mailclass.name
+        )
 
 
 class EndiciaMailclass(ModelSQL, ModelView):
     "Endicia mailclass"
     __name__ = 'endicia.mailclass'
 
-    name = fields.Char('Name', required=True, select=True)
-    value = fields.Char('Value', required=True, select=True)
+    active = fields.Boolean('Active', select=True)
+    name = fields.Char('Name', required=True, select=True, readonly=True)
+    value = fields.Char('Value', required=True, select=True, readonly=True)
     method_type = fields.Selection([
         ('domestic', 'Domestic'),
         ('international', 'International'),
-    ], 'Type', required=True, select=True)
+    ], 'Type', required=True, select=True, readonly=True)
+    display_name = fields.Char('Display Name', select=True)
+
+    @staticmethod
+    def default_active():
+        return True
+
+    @staticmethod
+    def check_xml_record(records, values):
+        if 'display_name' in values and len(values) == 1:
+            # Allow editing if display_name is the only key in values
+            return True
+        return False

@@ -39,8 +39,8 @@ class Address:
             ReturnAddress4=None,
             FromCity=self.city,
             FromState=self.subdivision and self.subdivision.code[3:],
-            FromPostalCode=self.zip,
-            FromPhone=phone,
+            FromPostalCode=self.zip and self.zip[:5],
+            FromPhone=phone and phone[-10:],
             FromEMail=self.party.email,
         )
 
@@ -51,20 +51,30 @@ class Address:
         :param return: Returns instance of ToAddress
         '''
         phone = self.party.phone
+        zip = self.zip
         if phone:
             # Remove the special characters in the phone if any
             phone = "".join([char for char in phone if char in string.digits])
+            if self.country and self.country.code != 'US':
+                # International
+                phone = phone[-30:]
+                zip = zip and zip[:15]
+            else:
+                # Domestic
+                phone = phone[-10:]
+                zip = zip and zip[:5]
+
         return ToAddress(
             ToName=self.name or self.party.name,
-            ToCompany=self.party and self.party.name,
+            ToCompany=self.name or self.party.name,
             ToAddress1=self.street,
             ToAddress2=self.streetbis,
             ToAddress3=None,
             ToAddress4=None,
             ToCity=self.city,
             ToState=self.subdivision and self.subdivision.code[3:],
-            ToPostalCode=self.zip,
-            ToCountry=self.country and self.country.name,
+            ToPostalCode=zip,
+            ToCountry=self.country and self.country.endicia_name,
             ToCountryCode=self.country and self.country.code,
             ToPhone=phone,
             ToEMail=self.party.email,

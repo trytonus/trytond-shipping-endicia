@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tryton>
+    <data skiptest="1">
+        <record model="country.country" id="country.ru">
+            <field name="name">Russian Federation</field>
+            <field name="code">RU</field>
+            <field name="endicia_country_name">Russia</field>
+        </record>
+        <record model="country.country" id="country.kr">
+            <field name="name">Korea, Republic of</field>
+            <field name="code">KR</field>
+            <field name="endicia_country_name">South Korea</field>
+        </record>
+        <record model="country.country" id="country.kp">
+            <field name="name">Korea, Democratic People's Republic of</field>
+            <field name="code">KP</field>
+            <field name="endicia_country_name">North Korea</field>
+        </record>
+    </data>
+</tryton>

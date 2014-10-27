@@ -6,6 +6,35 @@ from setuptools import setup, Command
 import re
 import os
 import ConfigParser
+import unittest
+import sys
+
+
+class SQLiteTest(Command):
+    """
+    Run the tests on SQLite
+    """
+    description = "Run tests on SQLite"
+
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        from trytond.config import CONFIG
+        CONFIG['db_type'] = 'sqlite'
+        os.environ['DB_NAME'] = ':memory:'
+
+        from tests import suite
+        test_result = unittest.TextTestRunner(verbosity=3).run(suite())
+
+        if test_result.wasSuccessful():
+            sys.exit(0)
+        sys.exit(-1)
 
 
 class XMLTests(Command):
@@ -90,12 +119,21 @@ major_version, minor_version, _ = info.get('version', '0.0.1').split('.', 2)
 major_version = int(major_version)
 minor_version = int(minor_version)
 
-requires = ['endicia']
+requires = [
+    'endicia >= 0.5'
+]
+MODULE2PREFIX = {
+    'shipping': 'openlabs'
+}
+
+MODULE = "endicia_integration"
+PREFIX = "trytond"
 for dep in info.get('depends', []):
     if not re.match(r'(ir|res|webdav)(\W|$)', dep):
         requires.append(
-            'trytond_%s >= %s.%s, < %s.%s' % (
-                dep, major_version, minor_version, major_version,
+            '%s_%s >= %s.%s, < %s.%s' % (
+                MODULE2PREFIX.get(dep, 'trytond'), dep,
+                major_version, minor_version, major_version,
                 minor_version + 1
             )
         )
@@ -106,20 +144,22 @@ requires.append(
 )
 
 setup(
-    name='trytond_endicia_integration',
+    name='%s_%s' % (PREFIX, MODULE),
     version=info.get('version', '0.0.1'),
     description='Integration with USPS via Endicia for Tryton',
     long_description=read('README.md'),
     author='Openlabs Technologies & Consulting (P) Ltd.',
     url='https://github.com/openlabs/trytond-endicia-integration/',
-    package_dir={'trytond.modules.endicia_integration': '.'},
+    package_dir={'trytond.modules.%s' % MODULE: '.'},
     packages=[
-        'trytond.modules.endicia_integration',
-        'trytond.modules.endicia_integration.tests',
+        'trytond.modules.%s' % MODULE,
+        'trytond.modules.%s.tests' % MODULE,
     ],
     package_data={
-        'trytond.modules.endicia_integration':
-            info.get('xml', []) + ['tryton.cfg', 'locale/*.po', 'icons/*.svg'],
+        'trytond.modules.%s' % MODULE:
+            info.get('xml', []) + [
+                'tryton.cfg', 'locale/*.po', 'icons/*.svg', 'view/*xml'
+            ],
     },
     classifiers=[
         'Development Status :: 4 - Beta',
@@ -141,12 +181,13 @@ setup(
     zip_safe=False,
     entry_points="""
     [trytond.modules]
-    endicia_integration = trytond.modules.endicia_integration
-    """,
+    %s = trytond.modules.%s
+    """ % (MODULE, MODULE),
     test_suite='tests',
     test_loader='trytond.test_loader:Loader',
     cmdclass={
         'xmltests': XMLTests,
         'audit': RunAudit,
+        'test': SQLiteTest,
     },
 )

@@ -6,39 +6,7 @@
             <field name="model">stock.shipment.out</field>
             <field name="type">form</field>
             <field name="inherit" ref="stock.shipment_out_view_form"/>
-            <field name="arch" type="xml">
-                <![CDATA[
-                <data>
-                    <xpath expr="//field[@name=&quot;carrier&quot;]" position="after">
-                        <group col="6" colspan="2" id="group_checkboxes">
-                            <label name="tracking_number"/>
-                            <field name="tracking_number"/>
-                        </group>
-                    </xpath>
-                    <xpath expr="/form/notebook/page[@id=&quot;outgoing_moves&quot;]"
-                        position="after">
-                        <page string="USPS [Endicia]"
-                              states="{'invisible': Not(Bool(Eval('is_endicia_shipping')))}"
-                            id="endicia">
-                            <label name="is_endicia_shipping"/>
-                            <field name="is_endicia_shipping"/>
-                            <label name="endicia_mailclass"/>
-                            <field name="endicia_mailclass"/>
-                            <label name="endicia_label_subtype"/>
-                            <field name="endicia_label_subtype"/>
-                            <label name="endicia_integrated_form_type"/>
-                            <field name="endicia_integrated_form_type"/>
-                            <label name="endicia_package_type"/>
-                            <field name="endicia_package_type"/>
-                            <label name="endicia_include_postage"/>
-                            <field name="endicia_include_postage"/>
-                            <label name="endicia_refunded"/>
-                            <field name="endicia_refunded"/>
-                        </page>
-                    </xpath>
-                </data>
-                ]]>
-            </field>
+            <field name="name">shipment_view_form</field>
         </record>
 
         <!-- Generate Labels -->
@@ -57,18 +25,7 @@
         <record model="ir.ui.view" id="generate_endicia_label_message_view_form">
             <field name="model">generate.endicia.label.message</field>
             <field name="type">form</field>
-            <field name="arch" type="xml">
-                <![CDATA[
-                <form string="USPS Labels Generated via Endicia" col="2">
-                    <image name="tryton-attachment" xexpand="0" xfill="0"/>
-                    <label string="Shipment labels have been generated via USPS [Endicia] and save as attachments for the shipment"
-                        id="endicia_labels_generate"/>
-                    <newline/>
-                    <label name="tracking_number"/>
-                    <field name="tracking_number"/>
-                </form>
-                ]]>
-            </field>
+            <field name="name">generate_endicia_label_message_view_form</field>
         </record>
 
         <!-- Request Refund -->
@@ -87,63 +44,14 @@
         <record model="ir.ui.view" id="endicia_refund_wizard_view_form">
             <field name="model">endicia.refund.wizard.view</field>
             <field name="type">form</field>
-            <field name="arch" type="xml">
-                <![CDATA[
-                <form string="Request Refund" col="2">
-                    <label name="refund_approved"/>
-                    <field name="refund_approved"/>
-                    <separator id="status" string="Status" colspan="4"/>
-                    <newline/>
-                    <field name="refund_status" colspan="4"/>
-                </form>
-                ]]>
-            </field>
-        </record>
-
-        <!-- Make SCAN Form -->
-        <record model="ir.action.wizard" id="wizard_make_scanform">
-            <field name="name">Make Endicia SCAN Form</field>
-            <field name="wiz_name">endicia.scanform.wizard</field>
-            <field name="model">stock.shipment.out</field>
-        </record>
-
-        <record model="ir.action.keyword" id="act_wizard_make_scanform">
-            <field name="keyword">form_action</field>
-            <field name="model">stock.shipment.out,-1</field>
-            <field name="action" ref="wizard_make_scanform"/>
-        </record>
-
-        <record model="ir.ui.view" id="endicia_scanform_wizard_view_form">
-            <field name="model">endicia.scanform.wizard.view</field>
-            <field name="type">form</field>
-            <field name="arch" type="xml">
-                <![CDATA[
-                <form string="Make SCAN Form" col="2">
-                    <separator id="status" string="Status" colspan="4"/>
-                    <newline/>
-                    <field name="response" colspan="4"/>
-                </form>
-                ]]>
-            </field>
+            <field name="name">endicia_refund_wizard_view_form</field>
         </record>
 
         <!-- Buy Postage Wizard -->
         <record model="ir.ui.view" id="endicia_buy_postage_wizard_view_form">
             <field name="model">buy.postage.wizard.view</field>
             <field name="type">form</field>
-            <field name="arch" type="xml">
-                <![CDATA[
-                <form string="Buy Postage" col="2">
-                    <label name="company"/>
-                    <field name="company"/>
-                    <label name="amount"/>
-                    <field name="amount"/>
-                    <separator id="status" string="Status" colspan="4"/>
-                    <newline/>
-                    <field name="response" colspan="4"/>
-                </form>
-                ]]>
-            </field>
+            <field name="name">endicia_buy_postage_wizard_view_form</field>
         </record>
 
         <record model="ir.action.wizard" id="action_buy_postage_wizard">

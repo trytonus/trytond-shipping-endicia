@@ -1,16 +1,17 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 from decimal import Decimal
-import math
 
-from endicia import CalculatingPostageAPI
+from endicia import CalculatingPostageAPI, PostageRatesAPI
 from endicia.tools import objectify_response
+from endicia.exceptions import RequestError
 from trytond.model import ModelView, fields
 from trytond.pool import PoolMeta, Pool
 from trytond.transaction import Transaction
 from trytond.pyson import Eval
 
-__all__ = ['Configuration', 'Sale', 'SaleLine']
+
+__all__ = ['Configuration', 'Sale']
 __metaclass__ = PoolMeta
 
 
@@ -20,6 +21,30 @@ ENDICIA_PACKAGE_TYPES = [
     ('Merchandise', 'Merchandise'),
     ('Other', 'Other'),
     ('Sample', 'Sample')
+]
+MAILPIECE_SHAPES = [
+    (None, ''),
+    ('Card', 'Card'),
+    ('Letter', 'Letter'),
+    ('Flat', 'Flat'),
+    ('Parcel', 'Parcel'),
+
+    ('LargeParcel', 'LargeParcel'),
+    ('IrregularParcel', 'IrregularParcel'),
+
+    ('FlatRateEnvelope', 'FlatRateEnvelope'),
+    ('FlatRateLegalEnvelope', 'FlatRateLegalEnvelope'),
+    ('FlatRatePaddedEnvelope', 'FlatRatePaddedEnvelope'),
+    ('FlatRateGiftCardEnvelope', 'FlatRateGiftCardEnvelope'),
+    ('FlatRateWindowEnvelope', 'FlatRateWindowEnvelope'),
+    ('FlatRateCardboardEnvelope', 'FlatRateCardboardEnvelope'),
+    ('SmallFlatRateEnvelope', 'SmallFlatRateEnvelope'),
+
+    ('SmallFlatRateBox', 'SmallFlatRateBox'),
+    ('MediumFlatRateBox', 'MediumFlatRateBox'),
+    ('LargeFlatRateBox', 'LargeFlatRateBox'),
+    ('DVDFlatRateBox', 'DVDFlatRateBox'),
+    ('LargeVideoFlatRateBox', 'LargeVideoFlatRateBox'),
 ]
 
 
@@ -35,12 +60,16 @@ class Configuration:
         ('Integrated', 'Integrated')
     ], 'Label Subtype')
     endicia_integrated_form_type = fields.Selection([
+        (None, ''),
         ('Form2976', 'Form2976(Same as CN22)'),
         ('Form2976A', 'Form2976(Same as CP72)'),
     ], 'Integrated Form Type')
     endicia_include_postage = fields.Boolean('Include Postage ?')
     endicia_package_type = fields.Selection(
         ENDICIA_PACKAGE_TYPES, 'Package Content Type'
+    )
+    endicia_mailpiece_shape = fields.Selection(
+        MAILPIECE_SHAPES, 'Endicia MailPiece Shape'
     )
 
     @staticmethod
@@ -50,13 +79,19 @@ class Configuration:
 
     @staticmethod
     def default_endicia_integrated_form_type():
-        # This is the default value as specified in Endicia doc
-        return 'Form2976'
+        return None
 
     @staticmethod
     def default_endicia_package_type():
         # This is the default value as specified in Endicia doc
         return 'Other'
+
+    @staticmethod
+    def default_endicia_mailpiece_shape():
+        """
+        This is not a required field, so send None by default
+        """
+        return None
 
 
 class Sale:
@@ -68,11 +103,28 @@ class Sale:
             'readonly': ~Eval('state').in_(['draft', 'quotation']),
         }, depends=['state']
     )
-    is_endicia_shipping = fields.Boolean(
-        'Is Endicia Shipping', states={
+    endicia_mailpiece_shape = fields.Selection(
+        MAILPIECE_SHAPES, 'Endicia MailPiece Shape', states={
             'readonly': ~Eval('state').in_(['draft', 'quotation']),
-        }, depends=['state', 'carrier']
+        }, depends=['state']
     )
+    is_endicia_shipping = fields.Function(
+        fields.Boolean('Is Endicia Shipping?', readonly=True),
+        'get_is_endicia_shipping'
+    )
+
+    def _get_weight_uom(self):
+        """
+        Returns uom for endicia
+        """
+        UOM = Pool().get('product.uom')
+
+        if self.is_endicia_shipping:
+
+            # Endicia by default uses this uom
+            return UOM.search([('symbol', '=', 'oz')])[0]
+
+        return super(Sale, self)._get_weight_uom()
 
     @staticmethod
     def default_endicia_mailclass():
@@ -172,98 +224,164 @@ class Sale:
     def create_shipment(self, shipment_type):
         Shipment = Pool().get('stock.shipment.out')
 
-        shipments = super(Sale, self).create_shipment(shipment_type)
+        with Transaction().set_context(ignore_carrier_computation=True):
+            # disable `carrier cost computation`(default behaviour) as cost
+            # should only be computed after updating mailclass else error may
+            # occur, with improper mailclass.
+            shipments = super(Sale, self).create_shipment(shipment_type)
         if shipment_type == 'out' and shipments and self.carrier and \
                 self.carrier.carrier_cost_method == 'endicia':
             Shipment.write(shipments, {
                 'endicia_mailclass': self.endicia_mailclass.id,
+                'endicia_mailpiece_shape': self.endicia_mailpiece_shape,
                 'is_endicia_shipping': self.is_endicia_shipping,
             })
-            # This is needed to update the shipment cost with
-            # the carrier on sale else the shipment cost on
-            # shipment will be generated from the default value
-            for shipment in shipments:
-                with Transaction().set_context(shipment.get_carrier_context()):
-                    shipment_cost = self.carrier.get_sale_price()
-                Shipment.write([shipment], {'cost': shipment_cost[0]})
         return shipments
 
-    def get_endicia_shipping_cost(self):
+    def _get_ship_from_address(self):
+        """
+        Usually the warehouse from which you ship
+        """
+        return self.warehouse.address
+
+    def get_endicia_shipping_cost(self, mailclass=None):
         """Returns the calculated shipping cost as sent by endicia
+
+        :param mailclass: endicia mailclass for which cost to be fetched
 
         :returns: The shipping cost in USD
         """
-        endicia_credentials = self.company.get_endicia_credentials()
+        EndiciaConfiguration = Pool().get('endicia.configuration')
 
-        if not self.endicia_mailclass:
+        endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
+
+        if not mailclass and not self.endicia_mailclass:
             self.raise_user_error('mailclass_missing')
 
+        from_address = self._get_ship_from_address()
+        to_address = self.shipment_address
+        to_zip = to_address.zip
+
+        if to_address.country and to_address.country.code == 'US':
+            # Domestic
+            to_zip = to_zip and to_zip[:5]
+        else:
+            # International
+            to_zip = to_zip and to_zip[:15]
+
         calculate_postage_request = CalculatingPostageAPI(
-            mailclass=self.endicia_mailclass.value,
-            weightoz=sum(map(
-                lambda line: line.get_weight_for_endicia(), self.lines
-            )),
-            from_postal_code=self.warehouse.address.zip,
-            to_postal_code=self.shipment_address.zip,
+            mailclass=mailclass or self.endicia_mailclass.value,
+            MailpieceShape=self.endicia_mailpiece_shape,
+            weightoz=self.package_weight,
+            from_postal_code=from_address.zip and from_address.zip[:5],
+            to_postal_code=to_zip,
+            to_country_code=to_address.country and to_address.country.code,
+            accountid=endicia_credentials.account_id,
+            requesterid=endicia_credentials.requester_id,
+            passphrase=endicia_credentials.passphrase,
+            test=endicia_credentials.is_test,
+        )
+
+        try:
+            response = calculate_postage_request.send_request()
+        except RequestError, e:
+            self.raise_user_error(unicode(e))
+
+        return self.fetch_endicia_postage_rate(
+            objectify_response(response).PostagePrice
+        )
+
+    def _get_endicia_mail_classes(self):
+        """
+        Returns list of endicia mailclass instances eligible for this sale
+
+        Downstream module can decide the eligibility of mail classes for sale
+        """
+        Mailclass = Pool().get('endicia.mailclass')
+
+        return Mailclass.search([])
+
+    def _make_endicia_rate_line(self, carrier, mailclass, shipment_rate):
+        """
+        Build a rate tuple from shipment_rate and mailclass
+        """
+        Currency = Pool().get('currency.currency')
+
+        usd, = Currency.search([('code', '=', 'USD')])
+        write_vals = {
+            'carrier': carrier.id,
+            'endicia_mailclass': mailclass.id,
+        }
+        return (
+            carrier._get_endicia_mailclass_name(mailclass),
+            shipment_rate,
+            usd,
+            {},
+            write_vals
+        )
+
+    def get_endicia_shipping_rates(self, silent=True):
+        """
+        Call the rates service and get possible quotes for shipment for eligible
+        mail classes
+        """
+        Carrier = Pool().get('carrier')
+        UOM = Pool().get('product.uom')
+        EndiciaConfiguration = Pool().get('endicia.configuration')
+
+        endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
+
+        carrier, = Carrier.search(['carrier_cost_method', '=', 'endicia'])
+
+        from_address = self._get_ship_from_address()
+        mailclass_type = "Domestic" if self.shipment_address.country.code == 'US' \
+            else "International"
+
+        uom_oz = UOM.search([('symbol', '=', 'oz')])[0]
+
+        postage_rates_request = PostageRatesAPI(
+            mailclass=mailclass_type,
+            weightoz=self._get_package_weight(uom_oz),
+            from_postal_code=from_address.zip[:5],
+            to_postal_code=self.shipment_address.zip[:5],
             to_country_code=self.shipment_address.country.code,
             accountid=endicia_credentials.account_id,
             requesterid=endicia_credentials.requester_id,
             passphrase=endicia_credentials.passphrase,
-            test=endicia_credentials.usps_test,
+            test=endicia_credentials.is_test,
         )
 
-        response = calculate_postage_request.send_request()
+        try:
+            response = postage_rates_request.send_request()
+            response = objectify_response(response)
+        except RequestError, e:
+            self.raise_user_error(unicode(e))
 
-        return Decimal(
-            objectify_response(response).PostagePrice.get('TotalAmount')
-        )
+        allowed_mailclasses = {
+            mailclass.name: mailclass
+            for mailclass in self._get_endicia_mail_classes()
+        }
 
+        rate_lines = []
+        for postage_price in response.PostagePrice:
+            postage = postage_price.Postage
+            mailclass = allowed_mailclasses.get(postage.MailService)
+            if not mailclass:
+                continue
+            cost = self.fetch_endicia_postage_rate(postage_price)
+            rate_lines.append(
+                self._make_endicia_rate_line(carrier, mailclass, cost)
+            )
+        return filter(None, rate_lines)
 
-class SaleLine:
-    'Sale Line'
-    __name__ = 'sale.line'
-
-    @classmethod
-    def __setup__(cls):
-        super(SaleLine, cls).__setup__()
-        cls._error_messages.update({
-            'weight_required': 'Weight is missing on the product %s',
-        })
-
-    def get_weight_for_endicia(self):
+    def fetch_endicia_postage_rate(self, postage_price_node):
         """
-        Returns weight as required for endicia.
+        Fetch postage rate from response
         """
-        ProductUom = Pool().get('product.uom')
+        return Decimal(postage_price_node.get('TotalAmount'))
 
-        if self.product.type == 'service':
-            return 0
-
-        if not self.product.weight:
-            self.raise_user_error(
-                'weight_required',
-                error_args=(self.product.name,)
-            )
-
-        # Find the quantity in the default uom of the product as the weight
-        # is for per unit in that uom
-        if self.unit != self.product.default_uom:
-            quantity = ProductUom.compute_qty(
-                self.unit,
-                self.quantity,
-                self.product.default_uom
-            )
-        else:
-            quantity = self.quantity
-
-        weight = float(self.product.weight) * quantity
-
-        # Endicia by default uses oz for weight purposes
-        if self.product.weight_uom.symbol != 'oz':
-            ounce, = ProductUom.search([('symbol', '=', 'oz')])
-            weight = ProductUom.compute_qty(
-                self.product.weight_uom,
-                weight,
-                ounce
-            )
-        return math.ceil(weight)
+    def get_is_endicia_shipping(self, name):
+        """
+        Check if shipping is from USPS
+        """
+        return self.carrier and self.carrier.carrier_cost_method == 'endicia'

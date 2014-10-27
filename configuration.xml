@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<tryton>
+    <data>
+
+        <record model="res.group" id="group_warehouse_manager">
+            <field name="name">Warehouse Manager</field>
+        </record>
+        <record model="res.user-res.group"
+          id="user_admin_group_warehouse_manager">
+            <field name="user" ref="res.user_admin"/>
+            <field name="group" ref="group_warehouse_manager"/>
+        </record>
+        <record model="ir.model.access" id="access_shipment_bag">
+            <field name="model"
+              search="[('model', '=', 'endicia.shipment.bag')]"/>
+            <field name="perm_read" eval="False"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_delete" eval="False"/>
+        </record>
+        <record model="ir.model.access"
+          id="access_shipment_bag_warehouse_manager">
+            <field name="model"
+              search="[('model', '=', 'endicia.shipment.bag')]"/>
+            <field name="group" ref="group_warehouse_manager"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_delete" eval="True"/>
+        </record>
+        <record model="ir.model.access"
+          id="access_shipments_warehouse_manager">
+            <field name="model"
+              search="[('model', '=', 'stock.shipment.out')]"/>
+            <field name="group" ref="group_warehouse_manager"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_delete" eval="False"/>
+        </record>
+
+        <record model="ir.ui.view" id="endicia_configuration_view_form">
+            <field name="model">endicia.configuration</field>
+            <field name="type">form</field>
+            <field name="name">endicia_configuration_form</field>
+        </record>
+        <record model="ir.action.act_window" id="act_endicia_configuration_form">
+            <field name="name">Endicia Configuration</field>
+            <field name="res_model">endicia.configuration</field>
+        </record>
+        <record model="ir.action.act_window.view" id="act_endicia_configuration_view1">
+            <field name="sequence" eval="1"/>
+            <field name="view" ref="endicia_configuration_view_form"/>
+            <field name="act_window" ref="act_endicia_configuration_form"/>
+        </record>
+        <menuitem parent="stock.menu_configuration" id="endicia_config"
+            action="act_endicia_configuration_form" sequence="5" icon="tryton-list"/>
+
+        <!-- Endicia Mailclass -->
+        <record model="ir.ui.view" id="usps_mailclass_view_form">
+            <field name="model">endicia.mailclass</field>
+            <field name="type">form</field>
+            <field name="name">mailclass_view_form</field>
+        </record>
+        <record model="ir.ui.view" id="usps_mailclass_view_tree">
+            <field name="model">endicia.mailclass</field>
+            <field name="type">tree</field>
+            <field name="name">mailclass_view_tree</field>
+        </record>
+        <record model="ir.action.act_window" id="act_usps_mailclass_form">
+            <field name="name">Endicia Mailclasses</field>
+            <field name="res_model">endicia.mailclass</field>
+        </record>
+        <record model="ir.action.act_window.view" id="act_usps_mailclass_view1">
+            <field name="sequence" eval="10"/>
+            <field name="view" ref="usps_mailclass_view_tree"/>
+            <field name="act_window" ref="act_usps_mailclass_form"/>
+        </record>
+        <record model="ir.action.act_window.view" id="act_usps_mailclass_view2">
+            <field name="sequence" eval="20"/>
+            <field name="view" ref="usps_mailclass_view_form"/>
+            <field name="act_window" ref="act_usps_mailclass_form"/>
+        </record>
+        <menuitem parent="stock.menu_configuration" id="menu_usps_mailclass"
+            action="act_usps_mailclass_form" sequence="5" icon="tryton-list"/>
+
+    </data>
+</tryton>

@@ -5,39 +5,38 @@
 Endicia integration
 """
 from trytond.pool import Pool
-from company import Company
 from party import Address
 from stock import (
     ShipmentOut, GenerateEndiciaLabelMessage, GenerateEndiciaLabel,
     EndiciaRefundRequestWizardView, EndiciaRefundRequestWizard,
-    SCANFormWizardView, SCANFormWizard, BuyPostageWizardView,
-    BuyPostageWizard, StockMove
+    BuyPostageWizardView, BuyPostageWizard
 )
+from shipment_bag import EndiciaShipmentBag
 from carrier import Carrier, EndiciaMailclass
-from sale import Configuration, Sale, SaleLine
+from sale import Configuration, Sale
+from configuration import EndiciaConfiguration
+from country import Country
 
 
 def register():
     Pool.register(
-        Company,
         Address,
         Carrier,
         EndiciaMailclass,
         Configuration,
         Sale,
-        SaleLine,
-        StockMove,
+        EndiciaShipmentBag,
         ShipmentOut,
         GenerateEndiciaLabelMessage,
         EndiciaRefundRequestWizardView,
-        SCANFormWizardView,
         BuyPostageWizardView,
+        EndiciaConfiguration,
+        Country,
         module='endicia_integration', type_='model'
     )
     Pool.register(
         GenerateEndiciaLabel,
         EndiciaRefundRequestWizard,
-        SCANFormWizard,
         BuyPostageWizard,
         module='endicia_integration', type_='wizard'
     )

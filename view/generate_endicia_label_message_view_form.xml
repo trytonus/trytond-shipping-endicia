@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form string="USPS Labels Generated via Endicia" col="2">
+    <image name="tryton-attachment" xexpand="0" xfill="0"/>
+    <label string="Shipment labels have been generated via USPS [Endicia] and save as attachments for the shipment" id="endicia_labels_generate"/>
+    <newline/>
+    <label name="tracking_number"/>
+    <field name="tracking_number"/>
+</form>
