@@ -147,7 +147,7 @@ setup(
     name='%s_%s' % (PREFIX, MODULE),
     version=info.get('version', '0.0.1'),
     description='Integration with USPS via Endicia for Tryton',
-    long_description=read('README.md'),
+    long_description=read('README.rst'),
     author='Openlabs Technologies & Consulting (P) Ltd.',
     url='https://github.com/openlabs/trytond-endicia-integration/',
     package_dir={'trytond.modules.%s' % MODULE: '.'},
