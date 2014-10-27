@@ -1,5 +1,5 @@
 trytond-endicia-integration
-=========================
+============================
 
 Endicia Integration
 
