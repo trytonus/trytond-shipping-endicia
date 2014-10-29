@@ -69,5 +69,11 @@
             <field name="method_type">international</field>
         </record>
 
+        <record id="ship_method_12" model="endicia.mailclass">
+            <field name="name">First Class Package International Service</field>
+            <field name="value">FirstClassPackageInternationalService</field>
+            <field name="method_type">international</field>
+        </record>
+
     </data>
 </tryton>

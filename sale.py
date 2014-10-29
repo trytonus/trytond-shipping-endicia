@@ -358,14 +358,13 @@ class Sale:
             self.raise_user_error(unicode(e))
 
         allowed_mailclasses = {
-            mailclass.name: mailclass
+            mailclass.value: mailclass
             for mailclass in self._get_endicia_mail_classes()
         }
 
         rate_lines = []
         for postage_price in response.PostagePrice:
-            postage = postage_price.Postage
-            mailclass = allowed_mailclasses.get(postage.MailService)
+            mailclass = allowed_mailclasses.get(postage_price.MailClass)
             if not mailclass:
                 continue
             cost = self.fetch_endicia_postage_rate(postage_price)
