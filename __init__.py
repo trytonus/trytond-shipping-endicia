@@ -7,9 +7,9 @@ Endicia integration
 from trytond.pool import Pool
 from party import Address
 from stock import (
-    ShipmentOut, GenerateEndiciaLabelMessage, GenerateEndiciaLabel,
-    EndiciaRefundRequestWizardView, EndiciaRefundRequestWizard,
-    BuyPostageWizardView, BuyPostageWizard
+    ShipmentOut, EndiciaRefundRequestWizardView, EndiciaRefundRequestWizard,
+    BuyPostageWizardView, BuyPostageWizard, ShippingEndicia,
+    GenerateShippingLabel
 )
 from shipment_bag import EndiciaShipmentBag
 from carrier import Carrier, EndiciaMailclass
@@ -27,16 +27,16 @@ def register():
         Sale,
         EndiciaShipmentBag,
         ShipmentOut,
-        GenerateEndiciaLabelMessage,
         EndiciaRefundRequestWizardView,
         BuyPostageWizardView,
         EndiciaConfiguration,
         Country,
+        ShippingEndicia,
         module='endicia_integration', type_='model'
     )
     Pool.register(
-        GenerateEndiciaLabel,
         EndiciaRefundRequestWizard,
         BuyPostageWizard,
+        GenerateShippingLabel,
         module='endicia_integration', type_='wizard'
     )

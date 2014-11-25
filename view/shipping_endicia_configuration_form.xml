@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form string="Endicia Configuration">
+    <label name="endicia_mailclass"/>
+    <field name="endicia_mailclass" widget="selection"/>
+    <label name="endicia_mailpiece_shape"/>
+    <field name="endicia_mailpiece_shape"/>
+    <label name="endicia_label_subtype"/>
+    <field name="endicia_label_subtype"/>
+    <label name="endicia_integrated_form_type"/>
+    <field name="endicia_integrated_form_type"/>
+    <label name="endicia_package_type"/>
+    <field name="endicia_package_type"/>
+    <label name="endicia_shipment_bag"/>
+    <field name="endicia_shipment_bag"/>
+    <label name="endicia_include_postage"/>
+    <field name="endicia_include_postage"/>
+    <label name="endicia_refunded"/>
+    <field name="endicia_refunded"/>
+</form>

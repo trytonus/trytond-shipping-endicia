@@ -9,25 +9,6 @@
             <field name="name">shipment_view_form</field>
         </record>
 
-        <!-- Generate Labels -->
-        <record model="ir.action.wizard" id="wizard_generate_endicia_label">
-            <field name="name">Generate USPS [Endicia] Label</field>
-            <field name="wiz_name">generate.endicia.label</field>
-            <field name="model">stock.shipment.out</field>
-        </record>
-
-        <record model="ir.action.keyword" id="act_wizard_generate_endicia_labels">
-            <field name="keyword">form_action</field>
-            <field name="model">stock.shipment.out,-1</field>
-            <field name="action" ref="wizard_generate_endicia_label"/>
-        </record>
-
-        <record model="ir.ui.view" id="generate_endicia_label_message_view_form">
-            <field name="model">generate.endicia.label.message</field>
-            <field name="type">form</field>
-            <field name="name">generate_endicia_label_message_view_form</field>
-        </record>
-
         <!-- Request Refund -->
         <record model="ir.action.wizard" id="wizard_request_refund">
             <field name="name">Request Endicia Refund</field>
@@ -62,6 +43,12 @@
             parent="stock.menu_configuration"
             action="action_buy_postage_wizard"
             id="menu_buy_postage_wizard" />
+
+        <record model="ir.ui.view" id="shipping_endicia_configuration_view_form">
+            <field name="model">shipping.label.endicia</field>
+            <field name="type">form</field>
+            <field name="name">shipping_endicia_configuration_form</field>
+        </record>
 
     </data>
 </tryton>

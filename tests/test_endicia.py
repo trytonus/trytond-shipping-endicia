@@ -59,6 +59,7 @@ class BaseTestCase(unittest.TestCase):
         self.User = POOL.get('res.user')
         self.Template = POOL.get('product.template')
         self.EndiciaConfiguration = POOL.get('endicia.configuration')
+        self.GenerateLabel = POOL.get('shipping.label', type="wizard")
 
     def _create_coa_minimal(self, company):
         """Create a minimal chart of accounts
@@ -454,6 +455,109 @@ class TestUSPSEndicia(BaseTestCase):
 
                 # Call method to generate labels.
                 shipment.make_endicia_labels()
+
+            self.assertTrue(shipment.tracking_number)
+            self.assertTrue(
+                self.IrAttachment.search([
+                    ('resource', '=', 'stock.shipment.out,%s' % shipment.id)
+                ], count=True) > 0
+            )
+
+    def test_0016_generate_endicia_flat_label_using_wizard(self):
+        """
+        Test case to generate Endicia labels using wizard
+        """
+        with Transaction().start(DB_NAME, USER, context=CONTEXT):
+
+            # Call method to create sale order
+            self.setup_defaults()
+
+            shipment, = self.StockShipmentOut.search([])
+            self.StockShipmentOut.write([shipment], {
+                'code': str(int(time())),
+                'endicia_mailpiece_shape': 'Flat',
+            })
+
+            # Before generating labels
+            # There is no tracking number generated
+            # And no attachment cerated for labels
+            self.assertFalse(shipment.tracking_number)
+            attatchment = self.IrAttachment.search([])
+            self.assertEqual(len(attatchment), 0)
+
+            # Make shipment in packed state.
+            shipment.assign([shipment])
+            shipment.pack([shipment])
+
+            with Transaction().set_context(
+                company=self.company.id, active_id=shipment
+            ):
+                # Call method to generate labels.
+                session_id, start_state, _ = self.GenerateLabel.create()
+
+                generate_label = self.GenerateLabel(session_id)
+
+                result = generate_label.default_start({})
+
+                self.assertEqual(result['shipment'], shipment.id)
+                self.assertEqual(result['carrier'], shipment.carrier.id)
+
+                generate_label.start.shipment = result['shipment']
+                generate_label.start.carrier = result['carrier']
+
+                self.assertEqual(
+                    generate_label.transition_next(), 'endicia_config'
+                )
+
+                result = generate_label.default_endicia_config({})
+
+                self.assertEqual(
+                    result['endicia_mailclass'], shipment.endicia_mailclass.id
+                )
+                self.assertEqual(
+                    result['endicia_mailpiece_shape'],
+                    shipment.endicia_mailpiece_shape
+                )
+                self.assertEqual(
+                    result['endicia_label_subtype'],
+                    shipment.endicia_label_subtype
+                )
+
+                self.assertEqual(
+                    result['endicia_integrated_form_type'],
+                    shipment.endicia_integrated_form_type
+                )
+                self.assertEqual(
+                    result['endicia_package_type'],
+                    shipment.endicia_package_type
+                )
+
+                self.assertEqual(
+                    result['endicia_include_postage'],
+                    shipment.endicia_include_postage
+                )
+
+                generate_label.endicia_config.endicia_mailclass = \
+                    result['endicia_mailclass']
+                generate_label.endicia_config.endicia_mailpiece_shape = \
+                    result['endicia_mailpiece_shape']
+                generate_label.endicia_config.endicia_label_subtype = \
+                    result['endicia_label_subtype']
+                generate_label.endicia_config.endicia_integrated_form_type = \
+                    result['endicia_integrated_form_type']
+                generate_label.endicia_config.endicia_package_type = \
+                    result['endicia_package_type']
+                generate_label.endicia_config.endicia_include_postage = \
+                    result['endicia_include_postage']
+                generate_label.endicia_config.endicia_shipment_bag = None
+
+                result = generate_label.default_generate({})
+
+                self.assertEqual(
+                    result['message'],
+                    'Shipment labels have been generated via ENDICIA and '
+                    'saved as attachments for the shipment'
+                )
 
             self.assertTrue(shipment.tracking_number)
             self.assertTrue(
