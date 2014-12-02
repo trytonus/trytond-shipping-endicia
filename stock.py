@@ -198,10 +198,10 @@ class ShipmentOut:
                 Element('Description', move.product.name[0:50]),
                 Element('Quantity', int(math.ceil(move.quantity))),
                 Element('Weight', int(move.get_weight(self.weight_uom))),
-                Element('Value', float(move.product.list_price)),
+                Element('Value', float(move.product.customs_value_used)),
             ]
             customsitems.append(Element('CustomsItem', new_item))
-            value += float(move.product.list_price) * move.quantity
+            value += float(move.product.customs_value_used) * move.quantity
 
         description = ','.join([
             move.product.name for move in self.outgoing_moves
