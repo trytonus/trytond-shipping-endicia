@@ -8,6 +8,7 @@ Inherit stock for endicia API
 from decimal import Decimal
 import base64
 import math
+import logging
 
 from endicia import ShippingLabelAPI, LabelRequest, RefundRequestAPI, \
     BuyingPostageAPI, Element, CalculatingPostageAPI
@@ -34,6 +35,8 @@ __all__ = [
 STATES = {
     'readonly': Eval('state') == 'done',
 }
+
+logger = logging.getLogger(__name__)
 
 
 class ShipmentOut:
@@ -292,12 +295,27 @@ class ShipmentOut:
 
         self._update_endicia_item_details(shipping_label_request)
 
+        # Logging.
+        logger.debug(
+            'Making Shipping Label Request for'
+            'Shipment ID: {0} and Carrier ID: {1}'
+            .format(self.id, self.carrier.id)
+        )
+        logger.debug('--------SHIPPING LABEL REQUEST--------')
+        logger.debug(str(shipping_label_request.to_xml()))
+        logger.debug('--------END REQUEST--------')
+
         try:
             response = shipping_label_request.send_request()
         except RequestError, error:
             self.raise_user_error('error_label', error_args=(error,))
         else:
             result = objectify_response(response)
+
+            # Logging.
+            logger.debug('--------SHIPPING LABEL RESPONSE--------')
+            logger.debug(str(response))
+            logger.debug('--------END RESPONSE--------')
 
             tracking_number = result.TrackingNumber.pyval
             self.__class__.write([self], {
@@ -357,10 +375,25 @@ class ShipmentOut:
             test=endicia_credentials.is_test,
         )
 
+        # Logging.
+        logger.debug(
+            'Making Postage Request for'
+            'Shipment ID: {0} and Carrier ID: {1}'
+            .format(self.id, self.carrier.id)
+        )
+        logger.debug('--------POSTAGE REQUEST--------')
+        logger.debug(str(calculate_postage_request.to_xml()))
+        logger.debug('--------END REQUEST--------')
+
         try:
             response = calculate_postage_request.send_request()
         except RequestError, error:
             self.raise_user_error('error_label', error_args=(error,))
+
+        # Logging.
+        logger.debug('--------POSTAGE RESPONSE--------')
+        logger.debug(str(response))
+        logger.debug('--------END RESPONSE--------')
 
         return Decimal(
             objectify_response(response).PostagePrice.get('TotalAmount')
