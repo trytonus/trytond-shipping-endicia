@@ -1,6 +1,7 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 from decimal import Decimal
+import logging
 
 from endicia import CalculatingPostageAPI, PostageRatesAPI
 from endicia.tools import objectify_response
@@ -46,6 +47,8 @@ MAILPIECE_SHAPES = [
     ('DVDFlatRateBox', 'DVDFlatRateBox'),
     ('LargeVideoFlatRateBox', 'LargeVideoFlatRateBox'),
 ]
+
+logger = logging.getLogger(__name__)
 
 
 class Configuration:
@@ -282,10 +285,25 @@ class Sale:
             test=endicia_credentials.is_test,
         )
 
+        # Logging.
+        logger.debug(
+            'Making Postage Request for shipping cost of'
+            'Sale ID: {0} and Carrier ID: {1}'
+            .format(self.id, self.carrier.id)
+        )
+        logger.debug('--------POSTAGE REQUEST--------')
+        logger.debug(str(calculate_postage_request.to_xml()))
+        logger.debug('--------END REQUEST--------')
+
         try:
             response = calculate_postage_request.send_request()
         except RequestError, e:
             self.raise_user_error(unicode(e))
+
+        # Logging.
+        logger.debug('--------POSTAGE RESPONSE--------')
+        logger.debug(str(response))
+        logger.debug('--------END RESPONSE--------')
 
         return self.fetch_endicia_postage_rate(
             objectify_response(response).PostagePrice
@@ -351,11 +369,26 @@ class Sale:
             test=endicia_credentials.is_test,
         )
 
+        # Logging.
+        logger.debug(
+            'Making Postage Rates Request for shipping rates of'
+            'Sale ID: {0} and Carrier ID: {1}'
+            .format(self.id, self.carrier.id)
+        )
+        logger.debug('--------POSTAGE RATES REQUEST--------')
+        logger.debug(str(postage_rates_request.to_xml()))
+        logger.debug('--------END REQUEST--------')
+
         try:
-            response = postage_rates_request.send_request()
-            response = objectify_response(response)
+            response_xml = postage_rates_request.send_request()
+            response = objectify_response(response_xml)
         except RequestError, e:
             self.raise_user_error(unicode(e))
+
+        # Logging.
+        logger.debug('--------POSTAGE RATES RESPONSE--------')
+        logger.debug(str(response_xml))
+        logger.debug('--------END RESPONSE--------')
 
         allowed_mailclasses = {
             mailclass.value: mailclass
