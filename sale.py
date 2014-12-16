@@ -373,7 +373,7 @@ class Sale:
         logger.debug(
             'Making Postage Rates Request for shipping rates of'
             'Sale ID: {0} and Carrier ID: {1}'
-            .format(self.id, self.carrier.id)
+            .format(self.id, carrier.id)
         )
         logger.debug('--------POSTAGE RATES REQUEST--------')
         logger.debug(str(postage_rates_request.to_xml()))
