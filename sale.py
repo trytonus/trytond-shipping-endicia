@@ -1,6 +1,6 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
-from decimal import Decimal
+from decimal import Decimal, ROUND_UP
 import logging
 
 from endicia import CalculatingPostageAPI, PostageRatesAPI
@@ -272,10 +272,14 @@ class Sale:
             # International
             to_zip = to_zip and to_zip[:15]
 
+        # Endicia only support 1 decimal place in weight
+        weight_oz = self.package_weight.quantize(
+            Decimal('.1'), rounding=ROUND_UP
+        )
         calculate_postage_request = CalculatingPostageAPI(
             mailclass=mailclass or self.endicia_mailclass.value,
             MailpieceShape=self.endicia_mailpiece_shape,
-            weightoz=self.package_weight,
+            weightoz=weight_oz,
             from_postal_code=from_address.zip and from_address.zip[:5],
             to_postal_code=to_zip,
             to_country_code=to_address.country and to_address.country.code,
@@ -357,9 +361,13 @@ class Sale:
 
         uom_oz = UOM.search([('symbol', '=', 'oz')])[0]
 
+        # Endicia only support 1 decimal place in weight
+        weight_oz = self._get_package_weight(uom_oz).quantize(
+            Decimal('.1'), rounding=ROUND_UP
+        )
         postage_rates_request = PostageRatesAPI(
             mailclass=mailclass_type,
-            weightoz=self._get_package_weight(uom_oz),
+            weightoz=weight_oz,
             from_postal_code=from_address.zip[:5],
             to_postal_code=self.shipment_address.zip[:5],
             to_country_code=self.shipment_address.country.code,
