@@ -5,7 +5,7 @@
 '''
 Inherit stock for endicia API
 '''
-from decimal import Decimal
+from decimal import Decimal, ROUND_UP
 import base64
 import math
 import logging
@@ -258,9 +258,13 @@ class ShipmentOut:
             ImageRotation="Rotate270",
         )
 
+        # Endicia only support 1 decimal place in weight
+        weight_oz = self.package_weight.quantize(
+            Decimal('.1'), rounding=ROUND_UP
+        )
         shipping_label_request = ShippingLabelAPI(
             label_request=label_request,
-            weight_oz=self.package_weight,
+            weight_oz=weight_oz,
             partner_customer_id=self.delivery_address.id,
             partner_transaction_id=self.id,
             mail_class=mailclass,
@@ -362,10 +366,14 @@ class ShipmentOut:
             # International
             to_zip = to_zip and to_zip[:15]
 
+        # Endicia only support 1 decimal place in weight
+        weight_oz = self.package_weight.quantize(
+            Decimal('.1'), rounding=ROUND_UP
+        )
         calculate_postage_request = CalculatingPostageAPI(
             mailclass=self.endicia_mailclass.value,
             MailpieceShape=self.endicia_mailpiece_shape,
-            weightoz=self.package_weight,
+            weightoz=weight_oz,
             from_postal_code=from_address.zip and from_address.zip[:5],
             to_postal_code=to_zip,
             to_country_code=to_address.country and to_address.country.code,
