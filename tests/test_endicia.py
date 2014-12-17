@@ -504,6 +504,7 @@ class TestUSPSEndicia(BaseTestCase):
 
                 generate_label.start.shipment = result['shipment']
                 generate_label.start.carrier = result['carrier']
+                generate_label.start.override_weight = None
 
                 self.assertEqual(
                     generate_label.transition_next(), 'endicia_config'
