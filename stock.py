@@ -349,8 +349,11 @@ class ShipmentOut:
 
         :returns: The shipping cost in USD
         """
+        Carrier = Pool().get('carrier')
         EndiciaConfiguration = Pool().get('endicia.configuration')
+
         endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
+        carrier, = Carrier.search(['carrier_cost_method', '=', 'endicia'])
 
         if not self.endicia_mailclass:
             self.raise_user_error('mailclass_missing')
@@ -387,7 +390,7 @@ class ShipmentOut:
         logger.debug(
             'Making Postage Request for'
             'Shipment ID: {0} and Carrier ID: {1}'
-            .format(self.id, self.carrier.id)
+            .format(self.id, carrier.id)
         )
         logger.debug('--------POSTAGE REQUEST--------')
         logger.debug(str(calculate_postage_request.to_xml()))
