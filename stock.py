@@ -38,6 +38,10 @@ STATES = {
 
 logger = logging.getLogger(__name__)
 
+quantize_2_decimal = lambda v: Decimal(v).quantize(
+    Decimal('.01'), rounding=ROUND_UP
+)
+
 
 class ShipmentOut:
     "Shipment Out"
@@ -201,7 +205,9 @@ class ShipmentOut:
                 Element('Description', move.product.name[0:50]),
                 Element('Quantity', int(math.ceil(move.quantity))),
                 Element('Weight', int(move.get_weight(self.weight_uom))),
-                Element('Value', float(move.product.customs_value_used)),
+                Element('Value', quantize_2_decimal(
+                    move.product.customs_value_used
+                )),
             ]
             customsitems.append(Element('CustomsItem', new_item))
             value += float(move.product.customs_value_used) * move.quantity
@@ -222,7 +228,7 @@ class ShipmentOut:
         ))
         request.add_data({
             'ContentsType': self.endicia_package_type,
-            'Value': total_value,
+            'Value': quantize_2_decimal(total_value),
             'Description': description[:50],
             'CustomsCertify': 'TRUE',   # TODO: Should this be part of config ?
             'CustomsSigner': user.name,
