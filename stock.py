@@ -192,6 +192,7 @@ class ShipmentOut:
 
         user = User(Transaction().user)
         customsitems = []
+        value = 0
 
         for move in self.outgoing_moves:
             if move.quantity <= 0:
@@ -203,6 +204,7 @@ class ShipmentOut:
                 Element('Value', float(move.product.customs_value_used)),
             ]
             customsitems.append(Element('CustomsItem', new_item))
+            value += float(move.product.customs_value_used) * move.quantity
 
         description = ','.join([
             move.product.name for move in self.outgoing_moves
@@ -214,7 +216,14 @@ class ShipmentOut:
                 Element('ContentsType', self.endicia_package_type)
             ]
         })
+        total_value = sum(map(
+            lambda move: float(move.product.cost_price) * move.quantity,
+            self.outgoing_moves
+        ))
         request.add_data({
+            'ContentsType': self.endicia_package_type,
+            'Value': total_value,
+            'Description': description[:50],
             'CustomsCertify': 'TRUE',   # TODO: Should this be part of config ?
             'CustomsSigner': user.name,
         })
