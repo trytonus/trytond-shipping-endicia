@@ -550,7 +550,6 @@ class TestUSPSEndicia(BaseTestCase):
                     result['endicia_package_type']
                 generate_label.endicia_config.endicia_include_postage = \
                     result['endicia_include_postage']
-                generate_label.endicia_config.endicia_shipment_bag = None
 
                 result = generate_label.default_generate({})
 

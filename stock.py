@@ -591,9 +591,6 @@ class ShippingEndicia(ModelView):
     endicia_mailpiece_shape = fields.Selection(
         MAILPIECE_SHAPES, 'Endicia MailPiece Shape'
     )
-    endicia_shipment_bag = fields.Many2One(
-        'endicia.shipment.bag', 'Endicia Shipment Bag'
-    )
     endicia_label_subtype = fields.Selection([
         ('None', 'None'),
         ('Integrated', 'Integrated')
@@ -668,8 +665,6 @@ class GenerateShippingLabel(Wizard):
             shipment.endicia_mailclass = self.endicia_config.endicia_mailclass
             shipment.endicia_mailpiece_shape = \
                 self.endicia_config.endicia_mailpiece_shape
-            shipment.endicia_shipment_bag = \
-                self.endicia_config.endicia_shipment_bag
             shipment.endicia_label_subtype = \
                 self.endicia_config.endicia_label_subtype
             shipment.endicia_integrated_form_type = \
@@ -678,7 +673,5 @@ class GenerateShippingLabel(Wizard):
                 self.endicia_config.endicia_package_type
             shipment.endicia_include_postage = \
                 self.endicia_config.endicia_include_postage
-            shipment.endicia_shipment_bag = \
-                self.endicia_config.endicia_shipment_bag
 
         return super(GenerateShippingLabel, self).update_shipment()
