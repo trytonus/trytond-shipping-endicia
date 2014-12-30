@@ -193,18 +193,21 @@ class ShipmentOut:
         :param request: Shipping Label API request instance
         '''
         User = Pool().get('res.user')
+        UOM = Pool().get('product.uom')
 
         user = User(Transaction().user)
+        uom_oz, = UOM.search([('symbol', '=', 'oz')])
         customsitems = []
         value = 0
 
         for move in self.outgoing_moves:
             if move.quantity <= 0:
                 continue
+            weight_oz = quantize_2_decimal(move.get_weight(uom_oz))
             new_item = [
                 Element('Description', move.product.name[0:50]),
                 Element('Quantity', int(math.ceil(move.quantity))),
-                Element('Weight', int(move.get_weight(self.weight_uom))),
+                Element('Weight', weight_oz),
                 Element('Value', quantize_2_decimal(
                     move.product.customs_value_used
                 )),
