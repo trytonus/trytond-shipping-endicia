@@ -176,7 +176,6 @@ class Sale:
 
     def apply_endicia_shipping(self):
         "Add a shipping line to sale for endicia"
-        Sale = Pool().get('sale.sale')
         Currency = Pool().get('currency.currency')
 
         if self.carrier and self.carrier.carrier_cost_method == 'endicia':
@@ -191,25 +190,12 @@ class Sale:
             shipment_cost = Currency.compute(
                 usd, shipment_cost_usd[0], self.currency
             )
-            Sale.write([self], {
-                'lines': [
-                    ('create', [{
-                        'type': 'line',
-                        'product': self.carrier.carrier_product.id,
-                        'description': self.endicia_mailclass.name,
-                        'quantity': 1,  # XXX
-                        'unit': self.carrier.carrier_product.sale_uom.id,
-                        'unit_price': Decimal(shipment_cost),
-                        'shipment_cost': Decimal(shipment_cost),
-                        'amount': Decimal(shipment_cost),
-                        'taxes': [],
-                        'sequence': 9999,  # XXX
-                    }]),
-                    ('delete', [
-                        line for line in self.lines if line.shipment_cost
-                    ]),
-                ]
-            })
+            self.add_shipping_line(
+                shipment_cost,
+                '%s - %s' % (
+                    self.carrier.party.name, self.endicia_mailclass.name
+                )
+            )
 
     @classmethod
     def quote(cls, sales):
