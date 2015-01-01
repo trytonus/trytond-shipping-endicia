@@ -177,9 +177,12 @@ class BaseTestCase(unittest.TestCase):
             'symbol': 'INR',
         }])
 
-        country_us, = self.Country.create([{
+        country_us, country_at = self.Country.create([{
             'name': 'United States',
             'code': 'US',
+        }, {
+            'name': 'Austria',
+            'code': 'AT',
         }])
 
         subdivision_idaho, = self.Country_Subdivision.create([{
@@ -193,6 +196,13 @@ class BaseTestCase(unittest.TestCase):
             'name': 'California',
             'code': 'US-CA',
             'country': country_us.id,
+            'type': 'state'
+        }])
+
+        subdivision_steiermark, = self.Country_Subdivision.create([{
+            'name': 'Steiermark',
+            'code': 'AT-6',
+            'country': country_at.id,
             'type': 'state'
         }])
 
@@ -261,7 +271,7 @@ class BaseTestCase(unittest.TestCase):
         }])
 
         uom_kg, = self.Uom.search([('symbol', '=', 'kg')])
-        uom_pound, = self.Uom.search([('symbol', '=', 'lb')])
+        uom_oz, = self.Uom.search([('symbol', '=', 'oz')])
 
         # Carrier Carrier Product
         carrier_product_template, = self.Template.create([{
@@ -287,12 +297,12 @@ class BaseTestCase(unittest.TestCase):
             'type': 'goods',
             'salable': True,
             'sale_uom': uom_kg,
-            'list_price': Decimal('10'),
-            'cost_price': Decimal('5'),
+            'list_price': Decimal('10.896'),
+            'cost_price': Decimal('5.896'),
             'default_uom': uom_kg,
             'account_revenue': account_revenue.id,
-            'weight': .5,
-            'weight_uom': uom_pound.id,
+            'weight': .1,
+            'weight_uom': uom_oz.id,
             'products': [('create', self.Template.default_products())]
         }])
 
@@ -323,6 +333,21 @@ class BaseTestCase(unittest.TestCase):
                 'city': 'Boise',
                 'country': country_us.id,
                 'subdivision': subdivision_idaho.id,
+            }, {
+                'name': 'John Doe',
+                'street': 'Johann Fuxgasse 36',
+                'zip': '8010',
+                'city': 'Graz',
+                'country': country_at.id,
+                'subdivision': subdivision_steiermark.id,
+            }, {
+                'name': 'John Doe',
+                'street': '1735 Carleton St.',
+                'streetbis': 'Apt A',
+                'zip': '94703',
+                'city': 'Berkeley',
+                'country': country_us.id,
+                'subdivision': subdivision_california.id,
             }])]
         }])
         self.PartyContact.create([{
@@ -350,7 +375,7 @@ class BaseTestCase(unittest.TestCase):
                 'lines': [
                     ('create', [{
                         'type': 'line',
-                        'quantity': 1,
+                        'quantity': 3,
                         'product': self.product,
                         'unit_price': Decimal('10.00'),
                         'description': 'Test Description1',
@@ -686,6 +711,97 @@ class TestUSPSEndicia(BaseTestCase):
 
             with Transaction().set_context(sale=sale):
                 self.assertGreater(len(self.carrier.get_rates()), 0)
+
+    def test_0035_generate_endicia_flat_label_customs_form(self):
+        """Test case to generate Endicia labels with customs forms
+        """
+        with Transaction().start(DB_NAME, USER, context=CONTEXT):
+
+            # Call method to create sale order
+            self.setup_defaults()
+
+            endicia_mailclass, = self.EndiciaMailclass.search([
+                ('value', '=', 'PriorityMailInternational')
+            ])
+
+            shipment, = self.StockShipmentOut.search([])
+            self.StockShipmentOut.write([shipment], {
+                'code': str(int(time())),
+                'endicia_mailpiece_shape': 'Flat',
+                'endicia_integrated_form_type': 'Form2976',
+                'endicia_label_subtype': 'Integrated',
+                'endicia_mailclass': endicia_mailclass.id,
+                'delivery_address': self.sale_party.addresses[1].id,
+            })
+
+            # Before generating labels
+            # There is no tracking number generated
+            # And no attachment cerated for labels
+            self.assertFalse(shipment.tracking_number)
+            attatchment = self.IrAttachment.search([])
+            self.assertEqual(len(attatchment), 0)
+
+            # Make shipment in packed state.
+            shipment.assign([shipment])
+            shipment.pack([shipment])
+
+            with Transaction().set_context(company=self.company.id):
+
+                # Call method to generate labels.
+                shipment.make_endicia_labels()
+
+            self.assertTrue(shipment.tracking_number)
+            self.assertTrue(
+                self.IrAttachment.search([
+                    ('resource', '=', 'stock.shipment.out,%s' % shipment.id)
+                ], count=True) > 1
+            )
+
+    def test_0040_generate_endicia_label_for_ca(self):
+        """Test case to generate Endicia labels for ca
+        """
+        with Transaction().start(DB_NAME, USER, context=CONTEXT):
+
+            # Call method to create sale order
+            self.setup_defaults()
+
+            endicia_mailclass, = self.EndiciaMailclass.search([
+                ('value', '=', 'First')
+            ])
+
+            shipment, = self.StockShipmentOut.search([])
+            self.StockShipmentOut.write([shipment], {
+                'code': str(int(time())),
+                'endicia_mailpiece_shape': None,
+                'endicia_package_type': 'Merchandise',
+                'endicia_integrated_form_type': 'Form2976',
+                'endicia_label_subtype': 'None',
+                'endicia_mailclass': endicia_mailclass.id,
+                'delivery_address': self.sale_party.addresses[2].id,
+            })
+
+            # Before generating labels
+            # There is no tracking number generated
+            # And no attachment cerated for labels
+            self.assertFalse(shipment.tracking_number)
+            attatchment = self.IrAttachment.search([])
+            self.assertEqual(len(attatchment), 0)
+
+            # Make shipment in packed state.
+            shipment.assign([shipment])
+            shipment.pack([shipment])
+
+            with Transaction().set_context(company=self.company.id):
+
+                # Call method to generate labels.
+                shipment.make_endicia_labels()
+
+            self.assertTrue(shipment.tracking_number)
+            self.assertTrue(
+                self.IrAttachment.search([
+                    ('resource', '=', 'stock.shipment.out,%s' % shipment.id)
+                ], count=True) > 0
+            )
 
 
 def suite():
