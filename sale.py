@@ -353,11 +353,17 @@ class Sale:
         weight_oz = self._get_package_weight(uom_oz).quantize(
             Decimal('.1'), rounding=ROUND_UP
         )
+        to_zip = self.shipment_address.zip
+        if mailclass_type == 'Domestic':
+            to_zip = to_zip and to_zip[:5]
+        else:
+            # International
+            to_zip = to_zip and to_zip[:15]
         postage_rates_request = PostageRatesAPI(
             mailclass=mailclass_type,
             weightoz=weight_oz,
             from_postal_code=from_address.zip[:5],
-            to_postal_code=self.shipment_address.zip[:5],
+            to_postal_code=to_zip,
             to_country_code=self.shipment_address.country.code,
             accountid=endicia_credentials.account_id,
             requesterid=endicia_credentials.requester_id,
