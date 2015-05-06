@@ -6,7 +6,7 @@
         <label name="requester_id"/>
         <field name="requester_id"/>
         <label name="passphrase"/>
-        <field name="passphrase"/>
+        <field name="passphrase" widget="password"/>
         <label name="is_test"/>
         <field name="is_test"/>
     </group>
