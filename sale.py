@@ -46,6 +46,10 @@ MAILPIECE_SHAPES = [
     ('LargeFlatRateBox', 'LargeFlatRateBox'),
     ('DVDFlatRateBox', 'DVDFlatRateBox'),
     ('LargeVideoFlatRateBox', 'LargeVideoFlatRateBox'),
+
+    ('RegionalRateBoxA', 'RegionalRateBoxA'),
+    ('RegionalRateBoxB', 'RegionalRateBoxB'),
+    ('RegionalRateBoxC', 'RegionalRateBoxC'),
 ]
 
 logger = logging.getLogger(__name__)
