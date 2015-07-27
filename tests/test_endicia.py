@@ -312,6 +312,7 @@ class BaseTestCase(unittest.TestCase):
             'party': carrier_party.id,
             'carrier_product': self.carrier_product.id,
             'carrier_cost_method': 'endicia',
+            'currency': self.currency.id,
         }])
 
         self.sale_party, = self.Party.create([{
