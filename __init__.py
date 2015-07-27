@@ -32,11 +32,11 @@ def register():
         EndiciaConfiguration,
         Country,
         ShippingEndicia,
-        module='endicia_integration', type_='model'
+        module='shipping_endicia', type_='model'
     )
     Pool.register(
         EndiciaRefundRequestWizard,
         BuyPostageWizard,
         GenerateShippingLabel,
-        module='endicia_integration', type_='wizard'
+        module='shipping_endicia', type_='wizard'
     )

@@ -4,8 +4,6 @@
 
     Test USPS Integration via Endicia.
 
-    :copyright: (c) 2013-2014 by Openlabs Technologies & Consulting (P) Limited
-    :license: GPLv3, see LICENSE for more details.
 """
 from trytond.tests.test_tryton import DB_NAME, USER, CONTEXT
 from trytond.transaction import Transaction

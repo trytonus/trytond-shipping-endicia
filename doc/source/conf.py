@@ -46,7 +46,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Endicia Integration'
-copyright = u'2011, Openlabs Technologies & Consulting (P) Limited'
+copyright = u'2015, Fulfil.io Inc., 2011, Openlabs Technologies & Consulting (P) Limited'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

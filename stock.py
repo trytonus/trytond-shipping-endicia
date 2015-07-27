@@ -451,14 +451,14 @@ class EndiciaRefundRequestWizard(Wizard):
 
     start = StateView(
         'endicia.refund.wizard.view',
-        'endicia_integration.endicia_refund_wizard_view_form', [
+        'shipping_endicia.endicia_refund_wizard_view_form', [
             Button('Cancel', 'end', 'tryton-cancel'),
             Button('Request Refund', 'request_refund', 'tryton-ok'),
         ]
     )
     request_refund = StateView(
         'endicia.refund.wizard.view',
-        'endicia_integration.endicia_refund_wizard_view_form', [
+        'shipping_endicia.endicia_refund_wizard_view_form', [
             Button('OK', 'end', 'tryton-ok'),
         ]
     )
@@ -548,14 +548,14 @@ class BuyPostageWizard(Wizard):
 
     start = StateView(
         'buy.postage.wizard.view',
-        'endicia_integration.endicia_buy_postage_wizard_view_form', [
+        'shipping_endicia.endicia_buy_postage_wizard_view_form', [
             Button('Cancel', 'end', 'tryton-cancel'),
             Button('Buy Postage', 'buy_postage', 'tryton-ok'),
         ]
     )
     buy_postage = StateView(
         'buy.postage.wizard.view',
-        'endicia_integration.endicia_buy_postage_wizard_view_form', [
+        'shipping_endicia.endicia_buy_postage_wizard_view_form', [
             Button('OK', 'end', 'tryton-ok'),
         ]
     )
@@ -622,7 +622,7 @@ class GenerateShippingLabel(Wizard):
 
     endicia_config = StateView(
         'shipping.label.endicia',
-        'endicia_integration.shipping_endicia_configuration_view_form',
+        'shipping_endicia.shipping_endicia_configuration_view_form',
         [
             Button('Back', 'start', 'tryton-go-previous'),
             Button('Continue', 'generate', 'tryton-go-next'),
