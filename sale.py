@@ -1,6 +1,6 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
-from decimal import Decimal, ROUND_UP
+from decimal import Decimal
 import logging
 
 from endicia import CalculatingPostageAPI, PostageRatesAPI
@@ -15,6 +15,8 @@ from trytond.pyson import Eval
 __all__ = ['Configuration', 'Sale']
 __metaclass__ = PoolMeta
 
+# Endicia only support 1 decimal place in weight
+round_up = lambda w: round(w + 0.05, 1)
 
 ENDICIA_PACKAGE_TYPES = [
     ('Documents', 'Documents'),
@@ -264,14 +266,10 @@ class Sale:
             # International
             to_zip = to_zip and to_zip[:15]
 
-        # Endicia only support 1 decimal place in weight
-        weight_oz = self.package_weight.quantize(
-            Decimal('.1'), rounding=ROUND_UP
-        )
         calculate_postage_request = CalculatingPostageAPI(
             mailclass=mailclass or self.endicia_mailclass.value,
             MailpieceShape=self.endicia_mailpiece_shape,
-            weightoz=weight_oz,
+            weightoz=round_up(self.package_weight),
             from_postal_code=from_address.zip and from_address.zip[:5],
             to_postal_code=to_zip,
             to_country_code=to_address.country and to_address.country.code,
@@ -353,10 +351,6 @@ class Sale:
 
         uom_oz = UOM.search([('symbol', '=', 'oz')])[0]
 
-        # Endicia only support 1 decimal place in weight
-        weight_oz = self._get_package_weight(uom_oz).quantize(
-            Decimal('.1'), rounding=ROUND_UP
-        )
         to_zip = self.shipment_address.zip
         if mailclass_type == 'Domestic':
             to_zip = to_zip and to_zip[:5]
@@ -365,7 +359,7 @@ class Sale:
             to_zip = to_zip and to_zip[:15]
         postage_rates_request = PostageRatesAPI(
             mailclass=mailclass_type,
-            weightoz=weight_oz,
+            weightoz=round_up(self._get_package_weight(uom_oz)),
             from_postal_code=from_address.zip[:5],
             to_postal_code=to_zip,
             to_country_code=self.shipment_address.country.code,
