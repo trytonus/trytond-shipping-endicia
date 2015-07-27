@@ -32,6 +32,9 @@ __all__ = [
     'BuyPostageWizardView', 'BuyPostageWizard',
 ]
 
+# Endicia only support 1 decimal place in weight
+round_up = lambda w: round(w + 0.05, 1)
+
 STATES = {
     'readonly': Eval('state') == 'done',
 }
@@ -203,11 +206,10 @@ class ShipmentOut:
         for move in self.outgoing_moves:
             if move.quantity <= 0:
                 continue
-            weight_oz = quantize_2_decimal(move.get_weight(uom_oz))
             new_item = [
                 Element('Description', move.product.name[0:50]),
                 Element('Quantity', int(math.ceil(move.quantity))),
-                Element('Weight', weight_oz),
+                Element('Weight', round_up(move.get_weight(uom_oz))),
                 Element('Value', quantize_2_decimal(
                     move.product.customs_value_used
                 )),
@@ -277,12 +279,9 @@ class ShipmentOut:
         )
 
         # Endicia only support 1 decimal place in weight
-        weight_oz = self.package_weight.quantize(
-            Decimal('.1'), rounding=ROUND_UP
-        )
         shipping_label_request = ShippingLabelAPI(
             label_request=label_request,
-            weight_oz=weight_oz,
+            weight_oz=round_up(self.package_weight),
             partner_customer_id=self.delivery_address.id,
             partner_transaction_id=self.id,
             mail_class=mailclass,
@@ -388,13 +387,10 @@ class ShipmentOut:
             to_zip = to_zip and to_zip[:15]
 
         # Endicia only support 1 decimal place in weight
-        weight_oz = self.package_weight.quantize(
-            Decimal('.1'), rounding=ROUND_UP
-        )
         calculate_postage_request = CalculatingPostageAPI(
             mailclass=self.endicia_mailclass.value,
             MailpieceShape=self.endicia_mailpiece_shape,
-            weightoz=weight_oz,
+            weightoz=round_up(self.package_weight),
             from_postal_code=from_address.zip and from_address.zip[:5],
             to_postal_code=to_zip,
             to_country_code=to_address.country and to_address.country.code,
