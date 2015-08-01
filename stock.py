@@ -128,7 +128,6 @@ class ShipmentOut:
         # shipment carrier at any state except `done`.
         cls.carrier.states = STATES
         cls._error_messages.update({
-            'warehouse_address_required': 'Warehouse address is required.',
             'mailclass_missing':
                 'Select a mailclass to ship using Endicia [USPS].',
             'error_label': 'Error in generating label "%s"',
@@ -293,12 +292,10 @@ class ShipmentOut:
             test=endicia_credentials.is_test,
         )
 
-        # From address is the warehouse location. So it must be filled.
-        if not self.warehouse.address:
-            self.raise_user_error('warehouse_address_required')
+        from_address = self._get_ship_from_address()
 
         shipping_label_request.add_data(
-            self.warehouse.address.address_to_endicia_from_address().data
+            from_address.address_to_endicia_from_address().data
         )
         shipping_label_request.add_data(
             self.delivery_address.address_to_endicia_to_address().data
@@ -355,12 +352,6 @@ class ShipmentOut:
                 }])
 
             return str(tracking_number)
-
-    def _get_ship_from_address(self):
-        """
-        Usually the warehouse from which you ship
-        """
-        return self.warehouse.address
 
     def get_endicia_shipping_cost(self):
         """Returns the calculated shipping cost as sent by endicia
