@@ -231,12 +231,6 @@ class Sale:
             })
         return shipments
 
-    def _get_ship_from_address(self):
-        """
-        Usually the warehouse from which you ship
-        """
-        return self.warehouse.address
-
     def get_endicia_shipping_cost(self, mailclass=None):
         """Returns the calculated shipping cost as sent by endicia
 
