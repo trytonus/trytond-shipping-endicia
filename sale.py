@@ -259,7 +259,7 @@ class Sale:
             to_zip = to_zip and to_zip[:15]
 
         # Endicia only support 1 decimal place in weight
-        weight_oz = "%.1f" % self.weight
+        weight_oz = "%.1f" % self.package_weight
         calculate_postage_request = CalculatingPostageAPI(
             mailclass=mailclass or self.endicia_mailclass.value,
             MailpieceShape=self.endicia_mailpiece_shape,
