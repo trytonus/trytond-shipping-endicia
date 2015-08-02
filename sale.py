@@ -259,9 +259,7 @@ class Sale:
             to_zip = to_zip and to_zip[:15]
 
         # Endicia only support 1 decimal place in weight
-        weight_oz = self.package_weight.quantize(
-            Decimal('.1'), rounding=ROUND_UP
-        )
+        weight_oz = "%.1f" % self.weight
         calculate_postage_request = CalculatingPostageAPI(
             mailclass=mailclass or self.endicia_mailclass.value,
             MailpieceShape=self.endicia_mailpiece_shape,
@@ -348,9 +346,7 @@ class Sale:
         uom_oz = UOM.search([('symbol', '=', 'oz')])[0]
 
         # Endicia only support 1 decimal place in weight
-        weight_oz = self._get_package_weight(uom_oz).quantize(
-            Decimal('.1'), rounding=ROUND_UP
-        )
+        weight_oz = "%.1f" % self._get_package_weight(uom_oz)
         to_zip = self.shipment_address.zip
         if mailclass_type == 'Domestic':
             to_zip = to_zip and to_zip[:5]
