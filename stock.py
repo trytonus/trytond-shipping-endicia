@@ -276,9 +276,7 @@ class ShipmentOut:
         )
 
         # Endicia only support 1 decimal place in weight
-        weight_oz = self.package_weight.quantize(
-            Decimal('.1'), rounding=ROUND_UP
-        )
+        weight_oz = "%.1f" % self.weight
         shipping_label_request = ShippingLabelAPI(
             label_request=label_request,
             weight_oz=weight_oz,
@@ -379,9 +377,7 @@ class ShipmentOut:
             to_zip = to_zip and to_zip[:15]
 
         # Endicia only support 1 decimal place in weight
-        weight_oz = self.package_weight.quantize(
-            Decimal('.1'), rounding=ROUND_UP
-        )
+        weight_oz = "%.1f" % self.weight
         calculate_postage_request = CalculatingPostageAPI(
             mailclass=self.endicia_mailclass.value,
             MailpieceShape=self.endicia_mailpiece_shape,

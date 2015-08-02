@@ -127,7 +127,7 @@ MODULE2PREFIX = {
 }
 
 MODULE = "shipping_endicia"
-PREFIX = "trytond"
+PREFIX = "fio"
 for dep in info.get('depends', []):
     if not re.match(r'(ir|res|webdav)(\W|$)', dep):
         requires.append(
