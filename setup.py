@@ -58,7 +58,7 @@ class XMLTests(Command):
     def run(self):
         import coverage
         import xmlrunner
-        cov = coverage.coverage(source=["trytond.modules.endicia_integration"])
+        cov = coverage.coverage(source=["trytond.modules.shipping_endicia"])
         cov.start()
         from tests import suite
         xmlrunner.XMLTestRunner(output="xml-test-results").run(suite())
@@ -126,7 +126,7 @@ MODULE2PREFIX = {
     'customs_value': 'openlabs',
 }
 
-MODULE = "endicia_integration"
+MODULE = "shipping_endicia"
 PREFIX = "trytond"
 for dep in info.get('depends', []):
     if not re.match(r'(ir|res|webdav)(\W|$)', dep):
@@ -148,8 +148,8 @@ setup(
     version=info.get('version', '0.0.1'),
     description='Integration with USPS via Endicia for Tryton',
     long_description=read('README.rst'),
-    author='Openlabs Technologies & Consulting (P) Ltd.',
-    url='https://github.com/openlabs/trytond-endicia-integration/',
+    author='Fulfil.io Inc, Openlabs Technologies & Consulting (P) Ltd.',
+    url='https://github.com/fufilio/trytond-shipping-endicia/',
     package_dir={'trytond.modules.%s' % MODULE: '.'},
     packages=[
         'trytond.modules.%s' % MODULE,
@@ -176,7 +176,7 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Topic :: Office/Business',
     ],
-    license='GPL-3',
+    license='BSD',
     install_requires=requires,
     zip_safe=False,
     entry_points="""

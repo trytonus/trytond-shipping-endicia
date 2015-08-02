@@ -4,8 +4,6 @@
 
     Test USPS Integration via Endicia.
 
-    :copyright: (c) 2013-2015 by Openlabs Technologies & Consulting (P) Limited
-    :license: GPLv3, see LICENSE for more details.
 """
 from decimal import Decimal
 from time import time
@@ -27,7 +25,7 @@ class BaseTestCase(unittest.TestCase):
     Base test case for trytond-endicia-integration.
     """
     def setUp(self):
-        trytond.tests.test_tryton.install_module('endicia_integration')
+        trytond.tests.test_tryton.install_module('shipping_endicia')
         self.Sale = POOL.get('sale.sale')
         self.SaleConfig = POOL.get('sale.configuration')
         self.EndiciaMailclass = POOL.get('endicia.mailclass')
@@ -399,7 +397,7 @@ class TestUSPSEndicia(BaseTestCase):
         '''
         Test views.
         '''
-        test_view('endicia_integration')
+        test_view('shipping_endicia')
 
     def test0006depends(self):
         '''

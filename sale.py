@@ -46,6 +46,10 @@ MAILPIECE_SHAPES = [
     ('LargeFlatRateBox', 'LargeFlatRateBox'),
     ('DVDFlatRateBox', 'DVDFlatRateBox'),
     ('LargeVideoFlatRateBox', 'LargeVideoFlatRateBox'),
+
+    ('RegionalRateBoxA', 'RegionalRateBoxA'),
+    ('RegionalRateBoxB', 'RegionalRateBoxB'),
+    ('RegionalRateBoxC', 'RegionalRateBoxC'),
 ]
 
 logger = logging.getLogger(__name__)
@@ -226,12 +230,6 @@ class Sale:
                 'is_endicia_shipping': self.is_endicia_shipping,
             })
         return shipments
-
-    def _get_ship_from_address(self):
-        """
-        Usually the warehouse from which you ship
-        """
-        return self.warehouse.address
 
     def get_endicia_shipping_cost(self, mailclass=None):
         """Returns the calculated shipping cost as sent by endicia
