@@ -122,8 +122,8 @@ requires = [
     'endicia >= 0.5'
 ]
 MODULE2PREFIX = {
-    'shipping': 'openlabs',
-    'customs_value': 'openlabs',
+    'shipping': 'fio',
+    'customs_value': 'fio',
 }
 
 MODULE = "shipping_endicia"
