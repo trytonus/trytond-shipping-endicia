@@ -13,14 +13,14 @@ import unittest
 
 import trytond.tests.test_tryton
 from trytond.tests.test_tryton import POOL, DB_NAME, USER, CONTEXT, \
-    test_view, test_depends
+    ModuleTestCase
 from trytond.transaction import Transaction
 from trytond.config import config
 from trytond.error import UserError
 config.set('database', 'path', '/tmp')
 
 
-class BaseTestCase(unittest.TestCase):
+class BaseTestCase(ModuleTestCase):
     """
     Base test case for trytond-endicia-integration.
     """
@@ -312,6 +312,7 @@ class BaseTestCase(unittest.TestCase):
             'party': carrier_party.id,
             'carrier_product': self.carrier_product.id,
             'carrier_cost_method': 'endicia',
+            'currency': self.currency,
         }])
 
         self.sale_party, = self.Party.create([{
@@ -393,17 +394,7 @@ class TestUSPSEndicia(BaseTestCase):
     Test USPS with Endicia.
     """
 
-    def test0005views(self):
-        '''
-        Test views.
-        '''
-        test_view('shipping_endicia')
-
-    def test0006depends(self):
-        '''
-        Test depends.
-        '''
-        test_depends()
+    module = 'endicia'
 
     def test_0010_generate_endicia_gss_labels(self):
         """Test case to generate Endicia labels.

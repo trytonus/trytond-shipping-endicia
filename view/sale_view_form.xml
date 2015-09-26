@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <data>
     <xpath expr="/form/notebook/page[@id=&quot;shipments&quot;]" position="after">
-        <page string="Endicia [USPS]" states="{'invisible': Not(Bool(Eval('is_endicia_shipping')))}" id="endicia">
+        <page string="Endicia [USPS]" id="endicia">
             <label name="is_endicia_shipping"/>
             <field name="is_endicia_shipping"/>
             <newline/>
