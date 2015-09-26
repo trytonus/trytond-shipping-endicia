@@ -19,7 +19,7 @@ from trytond.model import Workflow, ModelView, fields
 from trytond.wizard import Wizard, StateView, Button
 from trytond.transaction import Transaction
 from trytond.pool import Pool, PoolMeta
-from trytond.pyson import Eval
+from trytond.pyson import Eval, Bool
 from trytond.rpc import RPC
 
 from .sale import ENDICIA_PACKAGE_TYPES, MAILPIECE_SHAPES
@@ -77,6 +77,13 @@ class ShipmentOut:
         'get_is_endicia_shipping'
     )
     endicia_refunded = fields.Boolean('Refunded ?', readonly=True)
+
+    @classmethod
+    def view_attributes(cls):
+        return super(ShipmentOut, cls).view_attributes() + [
+            ('//page[@id="endicia"]', 'states', {
+                'invisible': ~Bool(Eval('is_endicia_shipping'))
+            })]
 
     def _get_weight_uom(self):
         """
@@ -142,13 +149,12 @@ class ShipmentOut:
             'get_endicia_shipping_cost': RPC(readonly=False, instantiate=0),
         })
 
+    @fields.depends('is_endicia_shipping', 'carrier')
     def on_change_carrier(self):
-        res = super(ShipmentOut, self).on_change_carrier()
+        super(ShipmentOut, self).on_change_carrier()
 
-        res['is_endicia_shipping'] = self.carrier and \
-            self.carrier.carrier_cost_method == 'endicia'
-
-        return res
+        self.is_endicia_shipping = self.carrier and \
+            self.carrier.carrier_cost_method == 'endicia' or None
 
     @classmethod
     @ModelView.button

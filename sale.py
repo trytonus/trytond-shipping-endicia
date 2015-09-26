@@ -1,6 +1,6 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
-from decimal import Decimal, ROUND_UP
+from decimal import Decimal
 import logging
 
 from endicia import CalculatingPostageAPI, PostageRatesAPI
@@ -9,7 +9,7 @@ from endicia.exceptions import RequestError
 from trytond.model import ModelView, fields
 from trytond.pool import PoolMeta, Pool
 from trytond.transaction import Transaction
-from trytond.pyson import Eval
+from trytond.pyson import Eval, Bool
 
 
 __all__ = ['Configuration', 'Sale']
@@ -120,6 +120,13 @@ class Sale:
         'get_is_endicia_shipping'
     )
 
+    @classmethod
+    def view_attributes(cls):
+        return super(Sale, cls).view_attributes() + [
+            ('//page[@id="endicia"]', 'states', {
+                'invisible': ~Bool(Eval('is_endicia_shipping'))
+            })]
+
     def _get_weight_uom(self):
         """
         Returns uom for endicia
@@ -152,13 +159,12 @@ class Sale:
             }
         })
 
+    @fields.depends('is_endicia_shipping', 'carrier')
     def on_change_carrier(self):
-        res = super(Sale, self).on_change_carrier()
+        super(Sale, self).on_change_carrier()
 
-        res['is_endicia_shipping'] = self.carrier and \
-            self.carrier.carrier_cost_method == 'endicia'
-
-        return res
+        self.is_endicia_shipping = self.carrier and \
+            self.carrier.carrier_cost_method == 'endicia' or None
 
     def _get_carrier_context(self):
         "Pass sale in the context"

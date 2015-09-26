@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <data>
     <xpath expr="/form/notebook/page[@id=&quot;outgoing_moves&quot;]" position="after">
-        <page string="USPS [Endicia]" states="{'invisible': Not(Bool(Eval('is_endicia_shipping')))}" id="endicia">
+        <page string="USPS [Endicia]" id="endicia">
             <label name="is_endicia_shipping"/>
             <field name="is_endicia_shipping"/>
             <label name="endicia_mailclass"/>
