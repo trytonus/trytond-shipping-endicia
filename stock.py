@@ -38,7 +38,7 @@ STATES = {
 
 logger = logging.getLogger(__name__)
 
-quantize_2_decimal = lambda v: Decimal(v).quantize(
+quantize_2_decimal = lambda v: Decimal("%f" % v).quantize(
     Decimal('.01'), rounding=ROUND_UP
 )
 
