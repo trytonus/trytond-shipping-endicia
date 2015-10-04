@@ -239,9 +239,7 @@ class Sale:
         :returns: The shipping cost in USD
         """
         Carrier = Pool().get('carrier')
-        EndiciaConfiguration = Pool().get('endicia.configuration')
 
-        endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
         carrier, = Carrier.search(['carrier_cost_method', '=', 'endicia'])
 
         if not mailclass and not self.endicia_mailclass:
@@ -267,10 +265,10 @@ class Sale:
             from_postal_code=from_address.zip and from_address.zip[:5],
             to_postal_code=to_zip,
             to_country_code=to_address.country and to_address.country.code,
-            accountid=endicia_credentials.account_id,
-            requesterid=endicia_credentials.requester_id,
-            passphrase=endicia_credentials.passphrase,
-            test=endicia_credentials.is_test,
+            accountid=self.carrier.account_id,
+            requesterid=self.carrier.requester_id,
+            passphrase=self.carrier.passphrase,
+            test=self.carrier.is_test,
         )
 
         # Logging.
@@ -333,9 +331,6 @@ class Sale:
         """
         Carrier = Pool().get('carrier')
         UOM = Pool().get('product.uom')
-        EndiciaConfiguration = Pool().get('endicia.configuration')
-
-        endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
 
         carrier, = Carrier.search(['carrier_cost_method', '=', 'endicia'])
 
@@ -359,10 +354,10 @@ class Sale:
             from_postal_code=from_address.zip[:5],
             to_postal_code=to_zip,
             to_country_code=self.shipment_address.country.code,
-            accountid=endicia_credentials.account_id,
-            requesterid=endicia_credentials.requester_id,
-            passphrase=endicia_credentials.passphrase,
-            test=endicia_credentials.is_test,
+            accountid=self.carrier.account_id,
+            requesterid=self.carrier.requester_id,
+            passphrase=self.carrier.passphrase,
+            test=self.carrier.is_test,
         )
 
         # Logging.
