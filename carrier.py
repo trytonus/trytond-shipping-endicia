@@ -1,10 +1,17 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
-from decimal import Decimal
 
+from decimal import Decimal
+from trytond import backend
 from trytond.model import ModelSQL, ModelView, fields
 from trytond.pool import PoolMeta, Pool
 from trytond.transaction import Transaction
+from trytond.pyson import Eval
+
+REQUIRED_IF_ENDICIA = {
+    'required': Eval('carrier_cost_method') == 'endicia',
+    'invisible': Eval('carrier_cost_method') != 'endicia',
+}
 
 __all__ = ['Carrier', 'EndiciaMailclass', ]
 __metaclass__ = PoolMeta
@@ -14,12 +21,44 @@ class Carrier:
     "Carrier"
     __name__ = 'carrier'
 
+    # endicia start from here
+    account_id = fields.Char('Account Id', states=REQUIRED_IF_ENDICIA)
+    requester_id = fields.Char('Requester Id', states=REQUIRED_IF_ENDICIA)
+    passphrase = fields.Char('Passphrase', states=REQUIRED_IF_ENDICIA)
+    is_test = fields.Boolean('Is Test', states=REQUIRED_IF_ENDICIA)
+
+    @classmethod
+    def __register__(cls, module_name):
+        TableHandler = backend.get('TableHandler')
+        cursor = Transaction().cursor
+        # Migration from 3.4.0.6 : Migrate account_id field to string
+        if backend.name() == 'postgresql':
+            cursor.execute(
+                    'SELECT pg_typeof("account_id") '
+                    'FROM carrier '
+                    'LIMIT 1',
+            )
+            # Check if account_id is integer field
+            # is_integer = cursor.fetchone()[0] == 'integer'
+
+            #if is_integer:
+            # Migrate integer field to string
+            table = TableHandler(cursor, cls, module_name)
+            table.alter_type('account_id', 'varchar')
+
+        super(Carrier, cls).__register__(module_name)
+
     @classmethod
     def __setup__(cls):
         super(Carrier, cls).__setup__()
         selection = ('endicia', 'USPS [Endicia]')
         if selection not in cls.carrier_cost_method.selection:
             cls.carrier_cost_method.selection.append(selection)
+
+        cls._error_messages.update({
+            'endicia_credentials_required':
+                'Endicia settings on endicia configuration are incomplete.',
+        })
 
     def get_rates(self):
         """
