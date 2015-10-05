@@ -1,0 +1,15 @@
+<data>
+    <xpath expr="/form/field[@name='currency']" position="after">
+        <newline/>
+            <group string="Endicia Configuration" states="{'invisible': Eval('carrier_cost_method') != 'endicia'}" id="endicia_configuration1" colspan="4">
+                <label name="account_id"/>
+                <field name="account_id"/>
+                <label name="requester_id"/>
+                <field name="requester_id"/>
+                <label name="passphrase"/>
+                <field name="passphrase" widget="password"/>
+                <label name="is_test"/>
+                <field name="is_test"/>
+            </group>
+    </xpath>
+</data>                                                                           

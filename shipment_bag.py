@@ -105,24 +105,22 @@ class EndiciaShipmentBag(Workflow, ModelSQL, ModelView):
         """
         Generate the SCAN Form for bag
         """
-        EndiciaConfiguration = Pool().get('endicia.configuration')
         Attachment = Pool().get('ir.attachment')
 
         # Getting the api credentials to be used in refund request generation
         # endget_weight_for_endiciaicia credentials are in the format :
         # (account_id, requester_id, passphrase, is_test)
-        endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
 
         if not self.shipments:
             self.raise_user_error('bag_empty')
 
         pic_numbers = [shipment.tracking_number for shipment in self.shipments]
-        test = endicia_credentials.is_test and 'Y' or 'N'
+        test = self.carrier.is_test and 'Y' or 'N'
         scan_request = SCANFormAPI(
             pic_numbers=pic_numbers,
-            accountid=endicia_credentials.account_id,
-            requesterid=endicia_credentials.requester_id,
-            passphrase=endicia_credentials.passphrase,
+            accountid=self.carrier.account_id,
+            requesterid=self.carrier.requester_id,
+            passphrase=self.carrier.passphrase,
             test=test,
         )
         response = scan_request.send_request()
