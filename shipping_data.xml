@@ -75,41 +75,5 @@
             <field name="method_type">international</field>
         </record>
 
-        <record id="ship_method_13" model="endicia.mailclass">
-            <field name="name">Small Flat Rate Box</field>
-            <field name="value">SmallFlatRateBox</field>
-            <field name="method_type">domestic</field>
-        </record>
-
-        <record id="ship_method_14" model="endicia.mailclass">
-            <field name="name">Medium Flat Rate Box</field>
-            <field name="value">MediumFlatRateBox</field>
-            <field name="method_type">domestic</field>
-        </record>
-
-        <record id="ship_method_15" model="endicia.mailclass">
-            <field name="name">Large Flat Rate Box</field>
-            <field name="value">LargeFlatRateBox</field>
-            <field name="method_type">domestic</field>
-        </record>
-
-        <record id="ship_method_16" model="endicia.mailclass">
-            <field name="name">Regional Rate Box A</field>
-            <field name="value">RegionalRateBoxA</field>
-            <field name="method_type">domestic</field>
-        </record>
-
-        <record id="ship_method_17" model="endicia.mailclass">
-            <field name="name">Regional Rate Box B</field>
-            <field name="value">RegionalRateBoxB</field>
-            <field name="method_type">domestic</field>
-        </record>
-
-        <record id="ship_method_18" model="endicia.mailclass">
-            <field name="name">Regional Rate Box C</field>
-            <field name="value">RegionalRateBoxC</field>
-            <field name="method_type">domestic</field>
-        </record>
-
     </data>
 </tryton>
