@@ -262,7 +262,6 @@ class Sale:
         weight_oz = "%.1f" % self.package_weight
         calculate_postage_request = CalculatingPostageAPI(
             mailclass=mailclass or self.endicia_mailclass.value,
-            MailpieceShape=self.endicia_mailpiece_shape,
             weightoz=weight_oz,
             from_postal_code=from_address.zip and from_address.zip[:5],
             to_postal_code=to_zip,
@@ -272,6 +271,7 @@ class Sale:
             passphrase=endicia_credentials.passphrase,
             test=endicia_credentials.is_test,
         )
+        calculate_postage_request.mailpieceshape = self.endicia_mailpiece_shape
 
         # Logging.
         logger.debug(
