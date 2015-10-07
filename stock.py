@@ -289,12 +289,12 @@ class ShipmentOut:
             partner_customer_id=self.delivery_address.id,
             partner_transaction_id=self.id,
             mail_class=mailclass,
-            MailpieceShape=self.endicia_mailpiece_shape,
             accountid=endicia_credentials.account_id,
             requesterid=endicia_credentials.requester_id,
             passphrase=endicia_credentials.passphrase,
             test=endicia_credentials.is_test,
         )
+        shipping_label_request.mailpieceshape = self.endicia_mailpiece_shape
 
         from_address = self._get_ship_from_address()
 
@@ -386,7 +386,6 @@ class ShipmentOut:
         weight_oz = "%.1f" % self.weight
         calculate_postage_request = CalculatingPostageAPI(
             mailclass=self.endicia_mailclass.value,
-            MailpieceShape=self.endicia_mailpiece_shape,
             weightoz=weight_oz,
             from_postal_code=from_address.zip and from_address.zip[:5],
             to_postal_code=to_zip,
@@ -396,6 +395,7 @@ class ShipmentOut:
             passphrase=endicia_credentials.passphrase,
             test=endicia_credentials.is_test,
         )
+        calculate_postage_request.mailpieceshape = self.endicia_mailpiece_shape
 
         # Logging.
         logger.debug(
