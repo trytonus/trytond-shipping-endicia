@@ -11,6 +11,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import unittest
 
+
 import trytond.tests.test_tryton
 from trytond.tests.test_tryton import POOL, DB_NAME, USER, CONTEXT, \
     test_view, test_depends
@@ -48,7 +49,6 @@ class BaseTestCase(unittest.TestCase):
         self.IrAttachment = POOL.get('ir.attachment')
         self.User = POOL.get('res.user')
         self.Template = POOL.get('product.template')
-        self.EndiciaConfiguration = POOL.get('endicia.configuration')
         self.GenerateLabel = POOL.get('shipping.label', type="wizard")
 
     def _create_coa_minimal(self, company):
@@ -207,15 +207,8 @@ class BaseTestCase(unittest.TestCase):
                     'country': country_us.id,
                     'subdivision': subdivision_california.id,
                 }])]
+                
             }])
-
-        # Endicia Configuration
-        self.EndiciaConfiguration.create([{
-            'account_id': '123456',
-            'requester_id': '123456',
-            'passphrase': 'PassPhrase',
-            'is_test': True,
-        }])
         self.company, = self.Company.create([{
             'party': company_party.id,
             'currency': self.currency.id,
@@ -309,6 +302,10 @@ class BaseTestCase(unittest.TestCase):
         }])
 
         self.carrier, = self.Carrier.create([{
+            'account_id': '123456',
+            'requester_id': '123456',
+            'passphrase': 'PassPhrase',
+            'is_test': True,
             'party': carrier_party.id,
             'carrier_product': self.carrier_product.id,
             'carrier_cost_method': 'endicia',
@@ -802,7 +799,8 @@ def suite():
         if test not in suite:
             suite.addTest(test)
     suite.addTests(
-        unittest.TestLoader().loadTestsFromTestCase(TestUSPSEndicia)
+        unittest.TestLoader().loadTestsFromTestCase(
+TestUSPSEndicia)
     )
     return suite
 
