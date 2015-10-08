@@ -35,6 +35,8 @@ class EndiciaConfiguration(ModelSingleton, ModelSQL, ModelView):
         cursor = Transaction().cursor
 
         # Migration from 3.4.0.6 : Migrate account_id field to string
+        super(EndiciaConfiguration, cls).__register__(module_name)
+
         if backend.name() == 'postgresql':
             cursor.execute(
                 'SELECT pg_typeof("account_id") '
@@ -42,15 +44,15 @@ class EndiciaConfiguration(ModelSingleton, ModelSQL, ModelView):
                 'LIMIT 1',
             )
 
+            records = cursor.fetchone()
+
             # Check if account_id is integer field
-            is_integer = cursor.fetchone()[0] == 'integer'
+            is_integer = records and records[0] == 'integer' or None
 
             if is_integer:
                 # Migrate integer field to string
                 table = TableHandler(cursor, cls, module_name)
                 table.alter_type('account_id', 'varchar')
-
-        super(EndiciaConfiguration, cls).__register__(module_name)
 
     def get_endicia_credentials(self):
         """Validate if endicia credentials are complete.
