@@ -310,7 +310,8 @@ class ShipmentOut:
                 'IntegratedFormType': self.endicia_integrated_form_type,
             })
 
-        self._update_endicia_item_details(shipping_label_request)
+        if self.delivery_address.country.code != 'US':
+            self._update_endicia_item_details(shipping_label_request)
 
         # Logging.
         logger.debug(
