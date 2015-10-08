@@ -2,6 +2,8 @@
 <form string="Endicia Mailclass">
     <label name="name"/>
     <field name="name"/>
+    <label name="active"/>
+    <field name="active"/>
     <label name="value"/>
     <field name="value"/>
     <label name="method_type"/>
