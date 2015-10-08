@@ -20,6 +20,15 @@ class EndiciaConfiguration(ModelSingleton, ModelSQL, ModelView):
     requester_id = fields.Char('Requester Id')
     passphrase = fields.Char('Passphrase')
     is_test = fields.Boolean('Is Test')
+    pricing = fields.Selection([
+        ('CommercialBase', 'Commercial Base'),
+        ('CommercialPlus', 'Commercial Plus'),
+        ('Retail', 'Retail'),
+    ], 'Pricing', required=True, select=True)
+
+    @staticmethod
+    def default_pricing():
+        return 'CommercialBase'
 
     @classmethod
     def __setup__(cls):
