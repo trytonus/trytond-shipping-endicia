@@ -105,7 +105,4 @@ class EndiciaMailclass(ModelSQL, ModelView):
 
     @staticmethod
     def check_xml_record(records, values):
-        if 'display_name' in values and len(values) == 1:
-            # Allow editing if display_name is the only key in values
-            return True
-        return False
+        return True
