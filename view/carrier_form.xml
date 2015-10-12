@@ -1,0 +1,14 @@
+<data>
+    <xpath expr="/form/field[@name='carrier_cost_method']" position="after">
+        <group string="Endicia Configuration" id="endicia_configuration" colspan="4">
+            <label name="endicia_account_id"/>
+            <field name="endicia_account_id"/>
+            <label name="endicia_requester_id"/>
+            <field name="endicia_requester_id"/>
+            <label name="endicia_passphrase"/>
+            <field name="endicia_passphrase"/>
+            <label name="endicia_is_test"/>
+            <field name="endicia_is_test"/>
+        </group>
+    </xpath>
+</data>
