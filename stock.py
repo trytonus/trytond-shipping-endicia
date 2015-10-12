@@ -243,7 +243,6 @@ class ShipmentOut:
         :return: Tracking number as string
         """
         Attachment = Pool().get('ir.attachment')
-        EndiciaConfiguration = Pool().get('endicia.configuration')
 
         if self.state not in ('packed', 'done'):
             self.raise_user_error('invalid_state')
@@ -257,14 +256,12 @@ class ShipmentOut:
         if self.tracking_number:
             self.raise_user_error('tracking_number_already_present')
 
-        endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
-
         if not self.endicia_mailclass:
             self.raise_user_error('mailclass_missing')
 
         mailclass = self.endicia_mailclass.value
         label_request = LabelRequest(
-            Test=endicia_credentials.is_test and 'YES' or 'NO',
+            Test=self.carrier.endicia_is_test and 'YES' or 'NO',
             LabelType=(
                 'International' in mailclass
             ) and 'International' or 'Default',
@@ -283,10 +280,10 @@ class ShipmentOut:
             partner_customer_id=self.delivery_address.id,
             partner_transaction_id=self.id,
             mail_class=mailclass,
-            accountid=endicia_credentials.account_id,
-            requesterid=endicia_credentials.requester_id,
-            passphrase=endicia_credentials.passphrase,
-            test=endicia_credentials.is_test,
+            accountid=self.carrier.endicia_account_id,
+            requesterid=self.carrier.endicia_requester_id,
+            passphrase=self.carrier.endicia_passphrase,
+            test=self.carrier.endicia_is_test,
         )
         shipping_label_request.mailpieceshape = self.endicia_mailpiece_shape
 
@@ -358,9 +355,7 @@ class ShipmentOut:
         :returns: The shipping cost in USD
         """
         Carrier = Pool().get('carrier')
-        EndiciaConfiguration = Pool().get('endicia.configuration')
 
-        endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
         carrier, = Carrier.search(['carrier_cost_method', '=', 'endicia'])
 
         if not self.endicia_mailclass:
@@ -385,10 +380,10 @@ class ShipmentOut:
             from_postal_code=from_address.zip and from_address.zip[:5],
             to_postal_code=to_zip,
             to_country_code=to_address.country and to_address.country.code,
-            accountid=endicia_credentials.account_id,
-            requesterid=endicia_credentials.requester_id,
-            passphrase=endicia_credentials.passphrase,
-            test=endicia_credentials.is_test,
+            accountid=carrier.endicia_account_id,
+            requesterid=carrier.endicia_requester_id,
+            passphrase=carrier.endicia_passphrase,
+            test=carrier.endicia_is_test,
         )
         calculate_postage_request.mailpieceshape = self.endicia_mailpiece_shape
 
@@ -464,12 +459,6 @@ class EndiciaRefundRequestWizard(Wizard):
         and returns the response.
         """
         Shipment = Pool().get('stock.shipment.out')
-        EndiciaConfiguration = Pool().get('endicia.configuration')
-
-        # Getting the api credentials to be used in refund request generation
-        # endicia credentials are in the format :
-        # (account_id, requester_id, passphrase, is_test)
-        endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
 
         shipments = Shipment.browse(Transaction().context['active_ids'])
 
@@ -485,13 +474,13 @@ class EndiciaRefundRequestWizard(Wizard):
 
             pic_numbers.append(shipment.tracking_number)
 
-        test = endicia_credentials.is_test and 'Y' or 'N'
+        test = shipment.carrier.endicia_is_test and 'Y' or 'N'
 
         refund_request = RefundRequestAPI(
             pic_numbers=pic_numbers,
-            accountid=endicia_credentials.account_id,
-            requesterid=endicia_credentials.requester_id,
-            passphrase=endicia_credentials.passphrase,
+            accountid=shipment.carrier.endicia_account_id,
+            requesterid=shipment.carrier.endicia_requester_id,
+            passphrase=shipment.carrier.endicia_passphrase,
             test=test,
         )
         try:
@@ -521,13 +510,12 @@ class BuyPostageWizardView(ModelView):
     """
     __name__ = 'buy.postage.wizard.view'
 
-    company = fields.Many2One('company.company', 'Company', required=True)
     amount = fields.Numeric('Amount in USD', required=True)
     response = fields.Text('Response', readonly=True)
-
-    @staticmethod
-    def default_company():
-        return Transaction().context.get('company')
+    carrier = fields.Many2One(
+        "carrier", required=True,
+        domain=[('carrier_cost_method', '=', 'endicia')]
+    )
 
 
 class BuyPostageWizard(Wizard):
@@ -554,18 +542,15 @@ class BuyPostageWizard(Wizard):
         """
         Generate the SCAN Form for the current shipment record
         """
-        EndiciaConfiguration = Pool().get('endicia.configuration')
-
         default = {}
-        endicia_credentials = EndiciaConfiguration(1).get_endicia_credentials()
 
         buy_postage_api = BuyingPostageAPI(
             request_id=Transaction().user,
             recredit_amount=self.start.amount,
-            requesterid=endicia_credentials.requester_id,
-            accountid=endicia_credentials.account_id,
-            passphrase=endicia_credentials.passphrase,
-            test=endicia_credentials.is_test,
+            requesterid=self.start.carrier.endicia_requester_id,
+            accountid=self.start.carrier.endicia_account_id,
+            passphrase=self.start.carrier.endicia_passphrase,
+            test=self.start.carrier.endicia_is_test,
         )
         try:
             response = buy_postage_api.send_request()
@@ -573,8 +558,8 @@ class BuyPostageWizard(Wizard):
             self.raise_user_error('error_label', error_args=(error,))
 
         result = objectify_response(response)
-        default['company'] = self.start.company
         default['amount'] = self.start.amount
+        default['carrier'] = self.start.carrier
         default['response'] = str(result.ErrorMessage) \
             if hasattr(result, 'ErrorMessage') else 'Success'
         return default

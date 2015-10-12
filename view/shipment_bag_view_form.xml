@@ -6,7 +6,8 @@
       <field name="close_date" xexpand="1"/>
       <label name="submission_id"/>
       <field name="submission_id" xexpand="1"/>
-      <newline />
+      <label name="carrier"/>
+      <field name="carrier"/>
       <field name="shipments" colspan="4"/>
       <group id="buttons" colspan="4">
           <field name="state" colspan="2"/>

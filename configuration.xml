@@ -39,23 +39,6 @@
             <field name="perm_delete" eval="False"/>
         </record>
 
-        <record model="ir.ui.view" id="endicia_configuration_view_form">
-            <field name="model">endicia.configuration</field>
-            <field name="type">form</field>
-            <field name="name">endicia_configuration_form</field>
-        </record>
-        <record model="ir.action.act_window" id="act_endicia_configuration_form">
-            <field name="name">Endicia Configuration</field>
-            <field name="res_model">endicia.configuration</field>
-        </record>
-        <record model="ir.action.act_window.view" id="act_endicia_configuration_view1">
-            <field name="sequence" eval="1"/>
-            <field name="view" ref="endicia_configuration_view_form"/>
-            <field name="act_window" ref="act_endicia_configuration_form"/>
-        </record>
-        <menuitem parent="stock.menu_configuration" id="endicia_config"
-            action="act_endicia_configuration_form" sequence="5" icon="tryton-list"/>
-
         <!-- Endicia Mailclass -->
         <record model="ir.ui.view" id="usps_mailclass_view_form">
             <field name="model">endicia.mailclass</field>
