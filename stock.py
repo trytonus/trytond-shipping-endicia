@@ -513,7 +513,7 @@ class BuyPostageWizardView(ModelView):
     amount = fields.Numeric('Amount in USD', required=True)
     response = fields.Text('Response', readonly=True)
     carrier = fields.Many2One(
-        "carrier", required=True,
+        "carrier", "Carrier", required=True,
         domain=[('carrier_cost_method', '=', 'endicia')]
     )
 
