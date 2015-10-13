@@ -5,14 +5,27 @@ from decimal import Decimal
 from trytond.model import ModelSQL, ModelView, fields
 from trytond.pool import PoolMeta, Pool
 from trytond.transaction import Transaction
+from trytond.pyson import Eval
 
 __all__ = ['Carrier', 'EndiciaMailclass', ]
 __metaclass__ = PoolMeta
+
+ENDICIA_STATES = {
+    'required': Eval('carrier_cost_method') == 'endicia',
+    'invisible': Eval('carrier_cost_method') != 'endicia',
+}
 
 
 class Carrier:
     "Carrier"
     __name__ = 'carrier'
+
+    endicia_account_id = fields.Char('Account Id', states=ENDICIA_STATES)
+    endicia_requester_id = fields.Char('Requester Id', states=ENDICIA_STATES)
+    endicia_passphrase = fields.Char('Passphrase', states=ENDICIA_STATES)
+    endicia_is_test = fields.Boolean('Is Test', states={
+        'invisible': Eval('carrier_cost_method') != 'endicia',
+    })
 
     @classmethod
     def __setup__(cls):

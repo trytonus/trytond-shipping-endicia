@@ -48,7 +48,6 @@ class BaseTestCase(ModuleTestCase):
         self.IrAttachment = POOL.get('ir.attachment')
         self.User = POOL.get('res.user')
         self.Template = POOL.get('product.template')
-        self.EndiciaConfiguration = POOL.get('endicia.configuration')
         self.GenerateLabel = POOL.get('shipping.label', type="wizard")
 
     def _create_coa_minimal(self, company):
@@ -209,13 +208,6 @@ class BaseTestCase(ModuleTestCase):
                 }])]
             }])
 
-        # Endicia Configuration
-        self.EndiciaConfiguration.create([{
-            'account_id': '123456',
-            'requester_id': '123456',
-            'passphrase': 'PassPhrase',
-            'is_test': True,
-        }])
         self.company, = self.Company.create([{
             'party': company_party.id,
             'currency': self.currency.id,
@@ -312,7 +304,11 @@ class BaseTestCase(ModuleTestCase):
             'party': carrier_party.id,
             'carrier_product': self.carrier_product.id,
             'carrier_cost_method': 'endicia',
-            'currency': self.currency,
+            'currency': self.currency.id,
+            'endicia_account_id': '123456',
+            'endicia_requester_id': '123456',
+            'endicia_passphrase': 'PassPhrase',
+            'endicia_is_test': True,
         }])
 
         self.sale_party, = self.Party.create([{
