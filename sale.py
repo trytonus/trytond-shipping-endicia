@@ -139,6 +139,12 @@ class Sale:
         config = Config(1)
         return config.endicia_mailclass and config.endicia_mailclass.id or None
 
+    @staticmethod
+    def default_endicia_mailpiece_shape():
+        Config = Pool().get('sale.configuration')
+        config = Config(1)
+        return config.endicia_mailpiece_shape and config.endicia_mailpiece_shape.id or None  # noqa
+
     @classmethod
     def __setup__(cls):
         super(Sale, cls).__setup__()
