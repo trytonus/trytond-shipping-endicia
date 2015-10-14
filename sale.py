@@ -143,7 +143,7 @@ class Sale:
     def default_endicia_mailpiece_shape():
         Config = Pool().get('sale.configuration')
         config = Config(1)
-        return config.endicia_mailpiece_shape and config.endicia_mailpiece_shape.id or None  # noqa
+        return config.endicia_mailpiece_shape
 
     @classmethod
     def __setup__(cls):
