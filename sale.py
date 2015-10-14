@@ -60,7 +60,8 @@ class Configuration:
     __name__ = 'sale.configuration'
 
     endicia_mailclass = fields.Many2One(
-        'endicia.mailclass', 'Default MailClass',
+        'carrier.service', 'Default MailClass',
+        domain=[('source', '=', 'endicia')]
     )
     endicia_label_subtype = fields.Selection([
         ('None', 'None'),
@@ -106,9 +107,9 @@ class Sale:
     __name__ = 'sale.sale'
 
     endicia_mailclass = fields.Many2One(
-        'endicia.mailclass', 'MailClass', states={
+        'carrier.service', 'MailClass', states={
             'readonly': ~Eval('state').in_(['draft', 'quotation']),
-        }, depends=['state']
+        }, depends=['state'], domain=[('source', '=', 'endicia')]
     )
     endicia_mailpiece_shape = fields.Selection(
         MAILPIECE_SHAPES, 'Endicia MailPiece Shape', states={
@@ -301,9 +302,9 @@ class Sale:
 
         Downstream module can decide the eligibility of mail classes for sale
         """
-        Mailclass = Pool().get('endicia.mailclass')
+        CarrierService = Pool().get('carrier.service')
 
-        return Mailclass.search([])
+        return CarrierService.search([('source', '=', 'endicia')])
 
     def _make_endicia_rate_line(self, carrier, mailclass, shipment_rate):
         """

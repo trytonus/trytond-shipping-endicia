@@ -3,76 +3,88 @@
     <data>
         
         <!-- Methods -->
-        <record id="ship_method_01" model="endicia.mailclass">
+        <record id="ship_method_001" model="carrier.service">
             <field name="name">Express Mail</field>
             <field name="value">Express</field>
             <field name="method_type">domestic</field>
+            <field name="source">endicia</field>
         </record>
     
-        <record id="ship_method_02" model="endicia.mailclass">
+        <record id="ship_method_002" model="carrier.service">
             <field name="name">First-Class Mail</field>
             <field name="value">First</field>
             <field name="method_type">domestic</field>
+            <field name="source">endicia</field>
         </record>
         
-        <record id="ship_method_03" model="endicia.mailclass">
+        <record id="ship_method_003" model="carrier.service">
             <field name="name">Library Mail</field>
             <field name="value">LibraryMail</field>
             <field name="method_type">domestic</field>
+            <field name="source">endicia</field>
         </record>
         
-        <record id="ship_method_04" model="endicia.mailclass">
+        <record id="ship_method_004" model="carrier.service">
             <field name="name">Media Mail</field>
             <field name="value">MediaMail</field>
             <field name="method_type">domestic</field>
+            <field name="source">endicia</field>
         </record>
         
-        <record id="ship_method_05" model="endicia.mailclass">
+        <record id="ship_method_005" model="carrier.service">
             <field name="name">Parcel Post</field>
             <field name="value">ParcelPost</field>
             <field name="method_type">domestic</field>
+            <field name="source">endicia</field>
         </record>
         
-        <record id="ship_method_06" model="endicia.mailclass">
+        <record id="ship_method_006" model="carrier.service">
             <field name="name">Parcel Select</field>
             <field name="value">ParcelSelect</field>
             <field name="method_type">domestic</field>
+            <field name="source">endicia</field>
         </record>
         
-        <record id="ship_method_07" model="endicia.mailclass">
+        <record id="ship_method_007" model="carrier.service">
             <field name="name">Priority Mail</field>
             <field name="value">Priority</field>
             <field name="method_type">domestic</field>
+            <field name="source">endicia</field>
         </record>
         
-        <record id="ship_method_08" model="endicia.mailclass">
+        <record id="ship_method_008" model="carrier.service">
             <field name="name">Standard Mail</field>
             <field name="value">StandardMail</field>
             <field name="method_type">domestic</field>
+            <field name="source">endicia</field>
         </record>
         
-        <record id="ship_method_09" model="endicia.mailclass">
+        <record id="ship_method_009" model="carrier.service">
             <field name="name">Express Mail International</field>
             <field name="value">ExpressMailInternational</field>
             <field name="method_type">international</field>
+            <field name="source">endicia</field>
         </record>
         
-        <record id="ship_method_10" model="endicia.mailclass">
+        <record id="ship_method_010" model="carrier.service">
             <field name="name">First-Class Mail International</field>
             <field name="value">FirstClassMailInternational</field>
             <field name="method_type">international</field>
+            <field name="source">endicia</field>
         </record>
         
-        <record id="ship_method_11" model="endicia.mailclass">
+        <record id="ship_method_011" model="carrier.service">
             <field name="name">Priority Mail International</field>
             <field name="value">PriorityMailInternational</field>
             <field name="method_type">international</field>
+            <field name="source">endicia</field>
         </record>
 
-        <record id="ship_method_12" model="endicia.mailclass">
+        <record id="ship_method_012" model="carrier.service">
             <field name="name">First Class Package International Service</field>
             <field name="value">FirstClassPackageInternationalService</field>
             <field name="method_type">international</field>
+            <field name="source">endicia</field>
         </record>
 
     </data>

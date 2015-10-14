@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<tree string="Endicia Mailclasses">
-    <field name="name"/>
-    <field name="active"/>
-    <field name="value"/>
-    <field name="method_type"/>
-    <field name="display_name"/>
-</tree>
