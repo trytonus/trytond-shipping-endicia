@@ -275,7 +275,8 @@ class Sale:
             passphrase=carrier.endicia_passphrase,
             test=carrier.endicia_is_test,
         )
-        calculate_postage_request.mailpieceshape = self.endicia_mailpiece_shape
+        if self.endicia_mailpiece_shape:
+            calculate_postage_request.mailpieceshape = self.endicia_mailpiece_shape
 
         # Logging.
         logger.debug(
