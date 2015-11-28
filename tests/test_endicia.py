@@ -28,7 +28,7 @@ class BaseTestCase(unittest.TestCase):
         trytond.tests.test_tryton.install_module('shipping_endicia')
         self.Sale = POOL.get('sale.sale')
         self.SaleConfig = POOL.get('sale.configuration')
-        self.EndiciaMailclass = POOL.get('endicia.mailclass')
+        self.CarrierService = POOL.get('carrier.service')
         self.Product = POOL.get('product.product')
         self.Uom = POOL.get('product.uom')
         self.Account = POOL.get('account.account')
@@ -219,8 +219,9 @@ class BaseTestCase(unittest.TestCase):
         }])
 
         # Sale configuration
-        endicia_mailclass, = self.EndiciaMailclass.search([
-            ('value', '=', 'First')
+        endicia_mailclass, = self.CarrierService.search([
+            ('value', '=', 'First'),
+            ('source', '=', 'endicia'),
         ])
 
         self.SaleConfig.write(self.SaleConfig(1), {
@@ -646,8 +647,9 @@ class TestUSPSEndicia(BaseTestCase):
             # Calling method to setup defaults.
             self.setup_defaults()
 
-            endicia_mailclass, = self.EndiciaMailclass.search([
-                ('value', '=', 'First')
+            endicia_mailclass, = self.CarrierService.search([
+                ('value', '=', 'First'),
+                ('source', '=', 'endicia'),
             ])
 
             # Following lines will test thrice, each
@@ -707,8 +709,9 @@ class TestUSPSEndicia(BaseTestCase):
             # Call method to create sale order
             self.setup_defaults()
 
-            endicia_mailclass, = self.EndiciaMailclass.search([
-                ('value', '=', 'PriorityMailInternational')
+            endicia_mailclass, = self.CarrierService.search([
+                ('value', '=', 'PriorityMailInternational'),
+                ('source', '=', 'endicia'),
             ])
 
             shipment, = self.StockShipmentOut.search([])
@@ -752,8 +755,9 @@ class TestUSPSEndicia(BaseTestCase):
             # Call method to create sale order
             self.setup_defaults()
 
-            endicia_mailclass, = self.EndiciaMailclass.search([
-                ('value', '=', 'First')
+            endicia_mailclass, = self.CarrierService.search([
+                ('value', '=', 'First'),
+                ('source', '=', 'endicia'),
             ])
 
             shipment, = self.StockShipmentOut.search([])

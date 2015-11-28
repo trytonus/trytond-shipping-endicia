@@ -7,7 +7,7 @@ from trytond.pool import PoolMeta, Pool
 from trytond.transaction import Transaction
 from trytond.pyson import Eval
 
-__all__ = ['Carrier', 'EndiciaMailclass', ]
+__all__ = ['Carrier', 'CarrierService']
 __metaclass__ = PoolMeta
 
 ENDICIA_STATES = {
@@ -99,22 +99,33 @@ class Carrier:
         )
 
 
-class EndiciaMailclass(ModelSQL, ModelView):
-    "Endicia mailclass"
-    __name__ = 'endicia.mailclass'
+class CarrierService:
+    "Carrier Service"
+    __name__ = 'carrier.service'
 
-    active = fields.Boolean('Active', select=True)
-    name = fields.Char('Name', required=True, select=True, readonly=True)
-    value = fields.Char('Value', required=True, select=True, readonly=True)
-    method_type = fields.Selection([
-        ('domestic', 'Domestic'),
-        ('international', 'International'),
-    ], 'Type', required=True, select=True, readonly=True)
-    display_name = fields.Char('Display Name', select=True)
+    @classmethod
+    def get_source(cls):
+        """
+        Get the source
+        """
+        sources = super(CarrierService, cls).get_source()
 
-    @staticmethod
-    def default_active():
-        return True
+        sources.append(('endicia', 'USPS [Endicia]'))
+
+        return sources
+
+    @classmethod
+    def get_method_type(cls):
+        """
+        Get the method types for endicia
+        """
+        method_types = super(CarrierService, cls).get_method_type()
+
+        method_types.extend(
+            [('domestic', 'Domestic'), ('international', 'International')]
+        )
+
+        return method_types
 
     @staticmethod
     def check_xml_record(records, values):

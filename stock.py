@@ -48,7 +48,8 @@ class ShipmentOut:
     __name__ = 'stock.shipment.out'
 
     endicia_mailclass = fields.Many2One(
-        'endicia.mailclass', 'MailClass', states=STATES, depends=['state']
+        'carrier.service', 'MailClass', states=STATES, depends=['state'],
+        domain=[('source', '=', 'endicia')]
     )
     endicia_mailpiece_shape = fields.Selection(
         MAILPIECE_SHAPES, 'Endicia MailPiece Shape', states=STATES,
@@ -566,7 +567,8 @@ class ShippingEndicia(ModelView):
     __name__ = 'shipping.label.endicia'
 
     endicia_mailclass = fields.Many2One(
-        'endicia.mailclass', 'MailClass', required=True
+        'carrier.service', 'MailClass', required=True,
+        domain=[('source', '=', 'endicia')]
     )
     endicia_mailpiece_shape = fields.Selection(
         MAILPIECE_SHAPES, 'Endicia MailPiece Shape'
