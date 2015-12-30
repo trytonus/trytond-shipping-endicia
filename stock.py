@@ -78,6 +78,22 @@ class ShipmentOut:
     )
     endicia_refunded = fields.Boolean('Refunded ?', readonly=True)
 
+    def get_tracking_number(self, name):
+        """
+        Return first tracking number for this shipment
+        if carrier is Endicia
+        """
+        Tracking = Pool().get('shipment.tracking')
+
+        if self.carrier and self.carrier.carrier_cost_method != 'endicia':
+            return super(ShipmentOut, self).get_tracking_number(name)
+
+        tracking_numbers = Tracking.search([
+            ('origin', '=', '%s,%s' % (self.__name__, self.id)),
+        ], limit=1)
+
+        return tracking_numbers and tracking_numbers[0].id or None
+
     def _get_weight_uom(self):
         """
         Returns uom for endicia
@@ -243,6 +259,7 @@ class ShipmentOut:
         :return: Tracking number as string
         """
         Attachment = Pool().get('ir.attachment')
+        Tracking = Pool().get('shipment.tracking')
 
         if self.state not in ('packed', 'done'):
             self.raise_user_error('invalid_state')
@@ -332,9 +349,17 @@ class ShipmentOut:
             logger.debug(str(response))
             logger.debug('--------END RESPONSE--------')
 
-            tracking_number = result.TrackingNumber.pyval
+            tracking_number = unicode(result.TrackingNumber.pyval)
+            Tracking.create([{
+                'carrier': self.carrier,
+                'tracking_number': tracking_number,
+                'is_master': True,
+                'origin': '%s,%d' % (
+                    self.__name__, self.id
+                ),
+            }])
+
             self.__class__.write([self], {
-                'tracking_number': unicode(result.TrackingNumber.pyval),
                 'cost': Decimal(str(result.FinalPostage.pyval)),
             })
 
