@@ -89,8 +89,7 @@ class ShipmentOut:
             return super(ShipmentOut, self).get_tracking_number(name)
 
         tracking_numbers = Tracking.search([
-            ('origin', '=', '%s,%s' % (self.__name__, self.id)),
-            ('is_cancelled', '=', False),
+            ('origin', '=', '%s,%s' % (self.__name__, self.id))
         ], limit=1)
 
         return tracking_numbers and tracking_numbers[0].id or None
