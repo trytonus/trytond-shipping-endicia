@@ -114,7 +114,10 @@ class EndiciaShipmentBag(Workflow, ModelSQL, ModelView):
         if not self.shipments:
             self.raise_user_error('bag_empty')
 
-        pic_numbers = [shipment.tracking_number for shipment in self.shipments]
+        pic_numbers = [
+            shipment.tracking_number.tracking_number
+            for shipment in self.shipments if shipment.tracking_number
+        ]
         test = self.carrier.endicia_is_test and 'Y' or 'N'
         scan_request = SCANFormAPI(
             pic_numbers=pic_numbers,

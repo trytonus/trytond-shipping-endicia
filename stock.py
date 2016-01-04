@@ -493,7 +493,8 @@ class EndiciaRefundRequestWizard(Wizard):
             ):
                 self.raise_user_error('wrong_carrier')
 
-            pic_numbers.append(shipment.tracking_number)
+            if shipment.tracking_number:
+                pic_numbers.append(shipment.tracking_number.tracking_number)
 
         test = shipment.carrier.endicia_is_test and 'Y' or 'N'
 
