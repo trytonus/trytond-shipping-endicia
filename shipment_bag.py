@@ -81,7 +81,7 @@ class EndiciaShipmentBag(Workflow, ModelSQL, ModelView):
         return datetime.utcnow().date()
 
     @classmethod
-    def get_bag(cls):
+    def get_bag(cls, carrier):
         """
         Returns currently opened bag and make sure only one bag is opened at a
         time.
@@ -93,7 +93,7 @@ class EndiciaShipmentBag(Workflow, ModelSQL, ModelView):
         if bags:
             # Return if a bag is opened.
             return bags[0]
-        return cls.create([{}])[0]
+        return cls.create([{'carrier', '=', carrier.id}])[0]
 
     @classmethod
     @ModelView.button

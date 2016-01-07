@@ -176,19 +176,14 @@ class ShipmentOut:
         EndiciaShipmentBag = Pool().get('endicia.shipment.bag')
 
         super(ShipmentOut, cls).done(shipments)
-        endicia_shipments = filter(
-            lambda s: s.carrier and s.carrier.carrier_cost_method == 'endicia',
-            shipments
-        )
 
-        if not endicia_shipments:
-            return
-
-        with Transaction().set_user(0):
-            bag = EndiciaShipmentBag.get_bag()
-        cls.write(endicia_shipments, {
-            'endicia_shipment_bag': bag
-        })
+        for shipment in shipments:
+            if shipment.carrier and \
+                    shipment.carrier.carrier_cost_method == 'endicia':
+                with Transaction().set_user(0):
+                    bag = EndiciaShipmentBag.get_bag(shipment.carrier)
+                shipment.endicia_shipment_bag = bag
+                shipment.save()
 
     def _get_carrier_context(self):
         "Pass shipment in the context"
