@@ -345,7 +345,7 @@ class ShipmentOut:
             logger.debug('--------END RESPONSE--------')
 
             tracking_number = unicode(result.TrackingNumber.pyval)
-            Tracking.create([{
+            tracking, = Tracking.create([{
                 'carrier': self.carrier,
                 'tracking_number': tracking_number,
                 'is_master': True,
@@ -367,7 +367,7 @@ class ShipmentOut:
                     'resource': '%s,%s' % (self.__name__, self.id)
                 }])
 
-            return str(tracking_number)
+            return tracking
 
     def get_endicia_shipping_cost(self):
         """Returns the calculated shipping cost as sent by endicia
