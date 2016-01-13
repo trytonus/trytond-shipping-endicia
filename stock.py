@@ -335,7 +335,7 @@ class ShipmentOut:
         try:
             response = shipping_label_request.send_request()
         except RequestError, error:
-            self.raise_user_error('error_label', error_args=(error,))
+            self.raise_user_error('error_label', error_args=(error.message,))
         else:
             result = objectify_response(response)
 
@@ -416,7 +416,7 @@ class ShipmentOut:
         try:
             response = calculate_postage_request.send_request()
         except RequestError, error:
-            self.raise_user_error('error_label', error_args=(error,))
+            self.raise_user_error('error_label', error_args=(error.message,))
 
         # Logging.
         logger.debug('--------POSTAGE RESPONSE--------')
@@ -503,7 +503,7 @@ class EndiciaRefundRequestWizard(Wizard):
         try:
             response = refund_request.send_request()
         except RequestError, error:
-            self.raise_user_error('error_label', error_args=(error,))
+            self.raise_user_error('error_label', error_args=(error.message,))
 
         result = objectify_response(response)
         if str(result.RefundList.PICNumber.IsApproved) == 'YES':
@@ -572,7 +572,7 @@ class BuyPostageWizard(Wizard):
         try:
             response = buy_postage_api.send_request()
         except RequestError, error:
-            self.raise_user_error('error_label', error_args=(error,))
+            self.raise_user_error('error_label', error_args=(error.message,))
 
         result = objectify_response(response)
         default['amount'] = self.start.amount
