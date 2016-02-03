@@ -182,7 +182,7 @@ class Sale:
         of endicia carrier not to calculate cost on each line change
         """
         with Transaction().set_context({'ignore_carrier_computation': True}):
-            return super(Sale, self).on_change_lines()
+            super(Sale, self).on_change_lines()
 
     def apply_endicia_shipping(self):
         "Add a shipping line to sale for endicia"
