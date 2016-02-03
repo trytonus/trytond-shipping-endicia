@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<form string="Buy Postage" col="2">
-    <label name="company"/>
-    <field name="company"/>
+<form string="Buy Postage">
     <label name="amount"/>
     <field name="amount"/>
+    <label name="carrier"/>
+    <field name="carrier"/>
     <separator id="status" string="Status" colspan="4"/>
     <newline/>
     <field name="response" colspan="4"/>
