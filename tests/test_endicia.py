@@ -16,7 +16,6 @@ from trytond.tests.test_tryton import POOL, DB_NAME, USER, CONTEXT, \
     test_view, test_depends
 from trytond.transaction import Transaction
 from trytond.config import config
-from trytond.error import UserError
 config.set('database', 'path', '/tmp')
 
 
@@ -28,7 +27,7 @@ class BaseTestCase(unittest.TestCase):
         trytond.tests.test_tryton.install_module('shipping_endicia')
         self.Sale = POOL.get('sale.sale')
         self.SaleConfig = POOL.get('sale.configuration')
-        self.EndiciaMailclass = POOL.get('endicia.mailclass')
+        self.CarrierService = POOL.get('carrier.service')
         self.Product = POOL.get('product.product')
         self.Uom = POOL.get('product.uom')
         self.Account = POOL.get('account.account')
@@ -218,18 +217,6 @@ class BaseTestCase(unittest.TestCase):
             'party': self.company.party.id
         }])
 
-        # Sale configuration
-        endicia_mailclass, = self.EndiciaMailclass.search([
-            ('value', '=', 'First')
-        ])
-
-        self.SaleConfig.write(self.SaleConfig(1), {
-            'endicia_label_subtype': 'Integrated',
-            'endicia_integrated_form_type': 'Form2976',
-            'endicia_mailclass': endicia_mailclass.id,
-            'endicia_include_postage': True,
-        })
-
         self.User.write(
             [self.User(USER)], {
                 'main_company': self.company.id,
@@ -305,9 +292,9 @@ class BaseTestCase(unittest.TestCase):
             'carrier_product': self.carrier_product.id,
             'carrier_cost_method': 'endicia',
             'currency': self.currency.id,
-            'endicia_account_id': '123456',
-            'endicia_requester_id': '123456',
-            'endicia_passphrase': 'PassPhrase',
+            'endicia_account_id': '2504280',
+            'endicia_requester_id': '1xxx',
+            'endicia_passphrase': 'thisisnewpassphrase',
             'endicia_is_test': True,
         }])
 
@@ -525,13 +512,6 @@ class TestUSPSEndicia(BaseTestCase):
                 result = generate_label.default_endicia_config({})
 
                 self.assertEqual(
-                    result['endicia_mailclass'], shipment.endicia_mailclass.id
-                )
-                self.assertEqual(
-                    result['endicia_mailpiece_shape'],
-                    shipment.endicia_mailpiece_shape
-                )
-                self.assertEqual(
                     result['endicia_label_subtype'],
                     shipment.endicia_label_subtype
                 )
@@ -550,10 +530,6 @@ class TestUSPSEndicia(BaseTestCase):
                     shipment.endicia_include_postage
                 )
 
-                generate_label.endicia_config.endicia_mailclass = \
-                    result['endicia_mailclass']
-                generate_label.endicia_config.endicia_mailpiece_shape = \
-                    result['endicia_mailpiece_shape']
                 generate_label.endicia_config.endicia_label_subtype = \
                     result['endicia_label_subtype']
                 generate_label.endicia_config.endicia_integrated_form_type = \
@@ -636,31 +612,6 @@ class TestUSPSEndicia(BaseTestCase):
                     ('resource', '=', 'endicia.shipment.bag,%s' % bag.id)
                 ], count=True), 1
             )
-    # TODO: Add more tests for wizards and other operations
-
-    def test_0025_endicia_readonly(self):
-        """
-        Test that endicia-mailclass records are readonly.
-        """
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
-            # Calling method to setup defaults.
-            self.setup_defaults()
-
-            endicia_mailclass, = self.EndiciaMailclass.search([
-                ('value', '=', 'First')
-            ])
-
-            # Following lines will test thrice, each
-            # with a different `argument` value.
-            for argument in [
-                    {'name': 'None'},
-                    {'value': 'Value'},
-                    {'method_type': 'international'}
-            ]:
-                self.assertRaises(
-                    UserError, self.EndiciaMailclass.write,
-                    [endicia_mailclass], argument
-                )
 
     def test_0030_endicia_shipping_rates(self):
         """

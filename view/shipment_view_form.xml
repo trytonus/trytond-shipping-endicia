@@ -1,13 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <data>
-    <xpath expr="/form/notebook/page[@id=&quot;outgoing_moves&quot;]" position="after">
-        <page string="USPS [Endicia]" states="{'invisible': Not(Bool(Eval('is_endicia_shipping')))}" id="endicia">
-            <label name="is_endicia_shipping"/>
-            <field name="is_endicia_shipping"/>
-            <label name="endicia_mailclass"/>
-            <field name="endicia_mailclass" widget="selection"/>
-            <label name="endicia_mailpiece_shape"/>
-            <field name="endicia_mailpiece_shape"/>
+    <xpath expr="//field[@name='tracking_number']" position="after">
+        <newline/>
+        <group id="endicia" string="Endicia Configuration" states="{'invisible': Eval('carrier_cost_method') != 'endicia'}" colspan="4">
             <label name="endicia_label_subtype"/>
             <field name="endicia_label_subtype"/>
             <label name="endicia_integrated_form_type"/>
@@ -18,6 +13,6 @@
             <field name="endicia_include_postage"/>
             <label name="endicia_refunded"/>
             <field name="endicia_refunded"/>
-        </page>
+        </group>
     </xpath>
 </data>
