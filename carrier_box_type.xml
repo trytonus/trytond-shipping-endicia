@@ -1,0 +1,110 @@
+<?xml version="1.0"?>
+<tryton>
+    <data>      
+        <record model="carrier.box_type" id="usps_card">
+            <field name="name">Card</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">Card</field>
+        </record>
+        <record model="carrier.box_type" id="usps_letter">
+            <field name="name">Letter</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">Letter</field>
+        </record>
+        <record model="carrier.box_type" id="usps_flat">
+            <field name="name">Flat</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">Flat</field>
+        </record>
+        <record model="carrier.box_type" id="usps_parcel">
+            <field name="name">Parcel</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">Parcel</field>
+        </record>
+        <record model="carrier.box_type" id="usps_large_parcel">
+            <field name="name">Large Parcel</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">LargeParcel</field>
+        </record>
+        <record model="carrier.box_type" id="usps_irregular_parcel">
+            <field name="name">Irregular Parcel</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">IrregularParcel</field>
+        </record>
+        <record model="carrier.box_type" id="usps_flat_rate_envelope">
+            <field name="name">Flat Rate Envelope</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">FlatRateEnvelope</field>
+        </record>
+        <record model="carrier.box_type" id="usps_flat_rate_legal_envelope">
+            <field name="name">Flat Rate Legal Envelope</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">FlatRateLegalEnvelope</field>
+        </record>
+        <record model="carrier.box_type" id="usps_rate_padded_envelope">
+            <field name="name">Flat Rate Padded Envelope</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">FlatRatePaddedEnvelope</field>
+        </record>
+        <record model="carrier.box_type" id="usps_flat_rate_gift_card_envelope">
+            <field name="name">Flat Rate Gift Card Envelope</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">FlatRateGiftCardEnvelope</field>
+        </record>
+        <record model="carrier.box_type" id="usps_flat_rate_window_envelope">
+            <field name="name">Flat Rate Window Envelope</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">FlatRateWindowEnvelope</field>
+        </record>
+        <record model="carrier.box_type" id="usps_flat_rate_cardboard_envelope">
+            <field name="name">Flat Rate Cardboard Envelope</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">FlatRateCardboardEnvelope</field>
+        </record>
+        <record model="carrier.box_type" id="usps_small_flat_rate_envelope">
+            <field name="name">Small Flat Rate Envelope</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">SmallFlatRateEnvelope</field>
+        </record>
+        <record model="carrier.box_type" id="usps_small_flat_rate_box">
+            <field name="name">Small Flat Rate Box</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">SmallFlatRateBox</field>
+        </record>
+        <record model="carrier.box_type" id="usps_medium_flat_rate_box">
+            <field name="name">Medium Flat Rate Box</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">MediumFlatRateBox</field>
+        </record>
+        <record model="carrier.box_type" id="usps_large_flat_rate_box">
+            <field name="name">Large Flat Rate Box</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">LargeFlatRateBox</field>
+        </record>
+        <record model="carrier.box_type" id="usps_dvd_flat_rate_box">
+            <field name="name">DVD Flat Rate Box</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">DVDFlatRateBox</field>
+        </record>
+        <record model="carrier.box_type" id="usps_large_video_flat_rate_box">
+            <field name="name">Large Video Flat Rate Box</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">LargeVideoFlatRateBox</field>
+        </record>
+        <record model="carrier.box_type" id="usps_regional_rate_box_a">
+            <field name="name">Regional Rate Box A</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">RegionalRateBoxA</field>
+        </record>
+        <record model="carrier.box_type" id="usps_regional_rate_box_b">
+            <field name="name">Regional Rate Box B</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">RegionalRateBoxB</field>
+        </record>
+        <record model="carrier.box_type" id="usps_regional_rate_box_c">
+            <field name="name">Regional Rate Box C</field>
+            <field name="carrier_cost_method">endicia</field>
+            <field name="code">RegionalRateBoxC</field>
+        </record>
+    </data>
+</tryton>

@@ -12,7 +12,7 @@ from stock import (
     GenerateShippingLabel
 )
 from shipment_bag import EndiciaShipmentBag
-from carrier import Carrier, EndiciaMailclass
+from carrier import Carrier, CarrierService, BoxType
 from sale import Configuration, Sale
 from country import Country
 
@@ -21,7 +21,8 @@ def register():
     Pool.register(
         Address,
         Carrier,
-        EndiciaMailclass,
+        CarrierService,
+        BoxType,
         Configuration,
         Sale,
         EndiciaShipmentBag,

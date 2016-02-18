@@ -39,33 +39,5 @@
             <field name="perm_delete" eval="False"/>
         </record>
 
-        <!-- Endicia Mailclass -->
-        <record model="ir.ui.view" id="usps_mailclass_view_form">
-            <field name="model">endicia.mailclass</field>
-            <field name="type">form</field>
-            <field name="name">mailclass_view_form</field>
-        </record>
-        <record model="ir.ui.view" id="usps_mailclass_view_tree">
-            <field name="model">endicia.mailclass</field>
-            <field name="type">tree</field>
-            <field name="name">mailclass_view_tree</field>
-        </record>
-        <record model="ir.action.act_window" id="act_usps_mailclass_form">
-            <field name="name">Endicia Mailclasses</field>
-            <field name="res_model">endicia.mailclass</field>
-        </record>
-        <record model="ir.action.act_window.view" id="act_usps_mailclass_view1">
-            <field name="sequence" eval="10"/>
-            <field name="view" ref="usps_mailclass_view_tree"/>
-            <field name="act_window" ref="act_usps_mailclass_form"/>
-        </record>
-        <record model="ir.action.act_window.view" id="act_usps_mailclass_view2">
-            <field name="sequence" eval="20"/>
-            <field name="view" ref="usps_mailclass_view_form"/>
-            <field name="act_window" ref="act_usps_mailclass_form"/>
-        </record>
-        <menuitem parent="stock.menu_configuration" id="menu_usps_mailclass"
-            action="act_usps_mailclass_form" sequence="5" icon="tryton-list"/>
-
     </data>
 </tryton>

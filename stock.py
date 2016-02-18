@@ -1,17 +1,11 @@
 # -*- encoding: utf-8 -*-
-# This file is part of Tryton.  The COPYRIGHT file at the top level of
-# this repository contains the full copyright notices and license terms.
-
-'''
-Inherit stock for endicia API
-'''
 from decimal import Decimal, ROUND_UP
 import base64
 import math
 import logging
 
 from endicia import ShippingLabelAPI, LabelRequest, RefundRequestAPI, \
-    BuyingPostageAPI, Element, CalculatingPostageAPI
+    BuyingPostageAPI, Element
 from endicia.tools import objectify_response, get_images
 from endicia.exceptions import RequestError
 
@@ -20,10 +14,20 @@ from trytond.wizard import Wizard, StateView, Button
 from trytond.transaction import Transaction
 from trytond.pool import Pool, PoolMeta
 from trytond.pyson import Eval
-from trytond.rpc import RPC
 
-from .sale import ENDICIA_PACKAGE_TYPES, MAILPIECE_SHAPES
+ENDICIA_STATES = {
+    'readonly': Eval('state') == 'done',
+    'invisible': Eval('carrier_cost_method') != 'endicia'
+}
+ENDICIA_DEPENDS = ['state', 'carrier_cost_method']
 
+ENDICIA_PACKAGE_TYPES = [
+    ('Documents', 'Documents'),
+    ('Gift', 'Gift'),
+    ('Merchandise', 'Merchandise'),
+    ('Other', 'Other'),
+    ('Sample', 'Sample')
+]
 
 __metaclass__ = PoolMeta
 __all__ = [
@@ -32,120 +36,45 @@ __all__ = [
     'BuyPostageWizardView', 'BuyPostageWizard',
 ]
 
-STATES = {
-    'readonly': Eval('state') == 'done',
-}
-
 logger = logging.getLogger(__name__)
 
-quantize_2_decimal = lambda v: Decimal("%f" % v).quantize(
-    Decimal('.01'), rounding=ROUND_UP
-)
+
+def quantize_2_decimal(value):
+    return Decimal("%f" % value).quantize(Decimal('.01'), rounding=ROUND_UP)
 
 
 class ShipmentOut:
     "Shipment Out"
     __name__ = 'stock.shipment.out'
 
-    endicia_mailclass = fields.Many2One(
-        'endicia.mailclass', 'MailClass', states=STATES, depends=['state']
-    )
-    endicia_mailpiece_shape = fields.Selection(
-        MAILPIECE_SHAPES, 'Endicia MailPiece Shape', states=STATES,
-        depends=['state']
-    )
     endicia_shipment_bag = fields.Many2One(
         'endicia.shipment.bag', 'Endicia Shipment Bag')
     endicia_label_subtype = fields.Selection([
         ('None', 'None'),
         ('Integrated', 'Integrated')
-    ], 'Label Subtype', states=STATES, depends=['state'])
+    ], 'Label Subtype', states=ENDICIA_STATES, depends=ENDICIA_DEPENDS)
     endicia_integrated_form_type = fields.Selection([
         (None, ''),
         ('Form2976', 'Form2976(Same as CN22)'),
         ('Form2976A', 'Form2976(Same as CP72)'),
-    ], 'Integrated Form Type', states=STATES, depends=['state'])
+    ], 'Integrated Form Type', states=ENDICIA_STATES, depends=ENDICIA_DEPENDS)
     endicia_include_postage = fields.Boolean(
-        'Include Postage ?', states=STATES, depends=['state']
+        'Include Postage ?', states=ENDICIA_STATES, depends=ENDICIA_DEPENDS
     )
     endicia_package_type = fields.Selection(
         ENDICIA_PACKAGE_TYPES, 'Package Content Type',
-        states=STATES, depends=['state']
+        states=ENDICIA_STATES, depends=ENDICIA_DEPENDS
     )
-    is_endicia_shipping = fields.Function(
-        fields.Boolean('Is Endicia Shipping?', readonly=True),
-        'get_is_endicia_shipping'
+    endicia_refunded = fields.Boolean(
+        'Refunded ?', readonly=True, states={
+            'invisible': Eval('carrier_cost_method') != 'endicia'
+        }, depends=ENDICIA_DEPENDS
     )
-    endicia_refunded = fields.Boolean('Refunded ?', readonly=True)
-
-    def get_tracking_number(self, name):
-        """
-        Return first tracking number for this shipment
-        if carrier is Endicia
-        """
-        Tracking = Pool().get('shipment.tracking')
-
-        if self.carrier and self.carrier.carrier_cost_method != 'endicia':
-            return super(ShipmentOut, self).get_tracking_number(name)
-
-        tracking_numbers = Tracking.search([
-            ('origin', '=', '%s,%s' % (self.__name__, self.id))
-        ], limit=1)
-
-        return tracking_numbers and tracking_numbers[0].id or None
-
-    def _get_weight_uom(self):
-        """
-        Returns uom for endicia
-        """
-        UOM = Pool().get('product.uom')
-
-        if self.is_endicia_shipping:
-
-            # Endicia by default uses this uom
-            return UOM.search([('symbol', '=', 'oz')])[0]
-
-        return super(ShipmentOut, self)._get_weight_uom()
-
-    @staticmethod
-    def default_endicia_mailclass():
-        Config = Pool().get('sale.configuration')
-        config = Config(1)
-        return config.endicia_mailclass and config.endicia_mailclass.id or None
-
-    @staticmethod
-    def default_endicia_label_subtype():
-        Config = Pool().get('sale.configuration')
-        config = Config(1)
-        return config.endicia_label_subtype
-
-    @staticmethod
-    def default_endicia_integrated_form_type():
-        Config = Pool().get('sale.configuration')
-        config = Config(1)
-        return config.endicia_integrated_form_type
-
-    @staticmethod
-    def default_endicia_include_postage():
-        Config = Pool().get('sale.configuration')
-        config = Config(1)
-        return config.endicia_include_postage
-
-    @staticmethod
-    def default_endicia_package_type():
-        Config = Pool().get('sale.configuration')
-        config = Config(1)
-        return config.endicia_package_type
 
     @classmethod
     def __setup__(cls):
         super(ShipmentOut, cls).__setup__()
-        # There can be cases when people might want to use a different
-        # shipment carrier at any state except `done`.
-        cls.carrier.states = STATES
         cls._error_messages.update({
-            'mailclass_missing':
-                'Select a mailclass to ship using Endicia [USPS].',
             'error_label': 'Error in generating label "%s"',
             'tracking_number_already_present':
                 'Tracking Number is already present for this shipment.',
@@ -153,18 +82,6 @@ class ShipmentOut:
                 'shipment is in Packed or Done states only',
             'wrong_carrier': 'Carrier for selected shipment is not Endicia',
         })
-        cls.__rpc__.update({
-            'make_endicia_labels': RPC(readonly=False, instantiate=0),
-            'get_endicia_shipping_cost': RPC(readonly=False, instantiate=0),
-        })
-
-    def on_change_carrier(self):
-        res = super(ShipmentOut, self).on_change_carrier()
-
-        res['is_endicia_shipping'] = self.carrier and \
-            self.carrier.carrier_cost_method == 'endicia'
-
-        return res
 
     @classmethod
     @ModelView.button
@@ -184,17 +101,6 @@ class ShipmentOut:
                     bag = EndiciaShipmentBag.get_bag(shipment.carrier)
                 shipment.endicia_shipment_bag = bag
                 shipment.save()
-
-    def _get_carrier_context(self):
-        "Pass shipment in the context"
-        context = super(ShipmentOut, self)._get_carrier_context()
-
-        if not self.carrier.carrier_cost_method == 'endicia':
-            return context
-
-        context = context.copy()
-        context['shipment'] = self.id
-        return context
 
     def _update_endicia_item_details(self, request):
         '''
@@ -247,7 +153,7 @@ class ShipmentOut:
             'CustomsSigner': user.name,
         })
 
-    def make_endicia_labels(self):
+    def generate_shipping_labels(self):
         """
         Make labels for the given shipment
 
@@ -255,27 +161,15 @@ class ShipmentOut:
         """
         Attachment = Pool().get('ir.attachment')
         Tracking = Pool().get('shipment.tracking')
+        Uom = Pool().get('product.uom')
 
-        if self.state not in ('packed', 'done'):
-            self.raise_user_error('invalid_state')
+        if self.carrier_cost_method != 'endicia':
+            return super(ShipmentOut, self).generate_shipping_labels()
 
-        if not (
-            self.carrier and
-            self.carrier.carrier_cost_method == 'endicia'
-        ):
-            self.raise_user_error('wrong_carrier')
-
-        if self.tracking_number:
-            self.raise_user_error('tracking_number_already_present')
-
-        if not self.endicia_mailclass:
-            self.raise_user_error('mailclass_missing')
-
-        mailclass = self.endicia_mailclass.value
         label_request = LabelRequest(
             Test=self.carrier.endicia_is_test and 'YES' or 'NO',
             LabelType=(
-                'International' in mailclass
+                'International' in self.carrier_service.code
             ) and 'International' or 'Default',
             # TODO: Probably the following have to be configurable
             ImageFormat="PNG",
@@ -284,20 +178,33 @@ class ShipmentOut:
             ImageRotation="Rotate270",
         )
 
+        try:
+            package, = self.packages
+        except ValueError:
+            self.raise_user_error(
+                "There should be exactly one package to generate USPS label"
+                "\n Multi Piece shipment is not supported yet"
+            )
+
+        oz, = Uom.search([('symbol', '=', 'oz')])
         # Endicia only support 1 decimal place in weight
-        weight_oz = "%.1f" % self.weight
+        weight_oz = "%.1f" % Uom.compute_qty(
+            package.weight_uom, package.weight, oz
+        )
         shipping_label_request = ShippingLabelAPI(
             label_request=label_request,
             weight_oz=weight_oz,
             partner_customer_id=self.delivery_address.id,
             partner_transaction_id=self.id,
-            mail_class=mailclass,
+            mail_class=self.carrier_service.code,
             accountid=self.carrier.endicia_account_id,
             requesterid=self.carrier.endicia_requester_id,
             passphrase=self.carrier.endicia_passphrase,
             test=self.carrier.endicia_is_test,
         )
-        shipping_label_request.mailpieceshape = self.endicia_mailpiece_shape
+
+        shipping_label_request.mailpieceshape = package.box_type and \
+            package.box_type.code
 
         from_address = self._get_ship_from_address()
 
@@ -366,72 +273,6 @@ class ShipmentOut:
                     'data': buffer(base64.decodestring(label)),
                     'resource': '%s,%s' % (self.__name__, self.id)
                 }])
-
-            return tracking
-
-    def get_endicia_shipping_cost(self):
-        """Returns the calculated shipping cost as sent by endicia
-
-        :returns: The shipping cost in USD
-        """
-        if not self.endicia_mailclass:
-            self.raise_user_error('mailclass_missing')
-
-        from_address = self._get_ship_from_address()
-        to_address = self.delivery_address
-        to_zip = to_address.zip
-
-        if to_address.country and to_address.country.code == 'US':
-            # Domestic
-            to_zip = to_zip and to_zip[:5]
-        else:
-            # International
-            to_zip = to_zip and to_zip[:15]
-
-        # Endicia only support 1 decimal place in weight
-        weight_oz = "%.1f" % self.weight
-        calculate_postage_request = CalculatingPostageAPI(
-            mailclass=self.endicia_mailclass.value,
-            weightoz=weight_oz,
-            from_postal_code=from_address.zip and from_address.zip[:5],
-            to_postal_code=to_zip,
-            to_country_code=to_address.country and to_address.country.code,
-            accountid=self.carrier.endicia_account_id,
-            requesterid=self.carrier.endicia_requester_id,
-            passphrase=self.carrier.endicia_passphrase,
-            test=self.carrier.endicia_is_test,
-        )
-        calculate_postage_request.mailpieceshape = self.endicia_mailpiece_shape
-
-        # Logging.
-        logger.debug(
-            'Making Postage Request for'
-            'Shipment ID: {0} and Carrier ID: {1}'
-            .format(self.id, self.carrier.id)
-        )
-        logger.debug('--------POSTAGE REQUEST--------')
-        logger.debug(str(calculate_postage_request.to_xml()))
-        logger.debug('--------END REQUEST--------')
-
-        try:
-            response = calculate_postage_request.send_request()
-        except RequestError, error:
-            self.raise_user_error('error_label', error_args=(error.message,))
-
-        # Logging.
-        logger.debug('--------POSTAGE RESPONSE--------')
-        logger.debug(str(response))
-        logger.debug('--------END RESPONSE--------')
-
-        return Decimal(
-            objectify_response(response).PostagePrice.get('TotalAmount')
-        )
-
-    def get_is_endicia_shipping(self, name):
-        """
-        Check if shipping is from USPS
-        """
-        return self.carrier and self.carrier.carrier_cost_method == 'endicia'
 
 
 class EndiciaRefundRequestWizardView(ModelView):
@@ -586,12 +427,6 @@ class ShippingEndicia(ModelView):
     'Endicia Configuration'
     __name__ = 'shipping.label.endicia'
 
-    endicia_mailclass = fields.Many2One(
-        'endicia.mailclass', 'MailClass', required=True
-    )
-    endicia_mailpiece_shape = fields.Selection(
-        MAILPIECE_SHAPES, 'Endicia MailPiece Shape'
-    )
     endicia_label_subtype = fields.Selection([
         ('None', 'None'),
         ('Integrated', 'Integrated')
@@ -617,40 +452,11 @@ class GenerateShippingLabel(Wizard):
         'shipping_endicia.shipping_endicia_configuration_view_form',
         [
             Button('Back', 'start', 'tryton-go-previous'),
-            Button('Continue', 'generate', 'tryton-go-next', default=True),
+            Button(
+                'Continue', 'generate_labels', 'tryton-go-next', default=True
+            ),
         ]
     )
-
-    def default_endicia_config(self, data):
-        Config = Pool().get('sale.configuration')
-        config = Config(1)
-        shipment = self.start.shipment
-
-        return {
-            'endicia_mailclass': (
-                shipment.endicia_mailclass and shipment.endicia_mailclass.id
-            ) or (
-                config.endicia_mailclass and config.endicia_mailclass.id
-            ) or None,
-            'endicia_mailpiece_shape': (
-                shipment.endicia_mailpiece_shape or
-                config.endicia_mailpiece_shape
-            ),
-            'endicia_label_subtype': (
-                shipment.endicia_label_subtype or config.endicia_label_subtype
-            ),
-            'endicia_integrated_form_type': (
-                shipment.endicia_integrated_form_type or
-                config.endicia_integrated_form_type
-            ),
-            'endicia_include_postage': (
-                shipment.endicia_include_postage or
-                config.endicia_include_postage
-            ),
-            'endicia_package_type': (
-                shipment.endicia_package_type or config.endicia_package_type
-            )
-        }
 
     def transition_next(self):
         state = super(GenerateShippingLabel, self).transition_next()
@@ -659,13 +465,18 @@ class GenerateShippingLabel(Wizard):
             return 'endicia_config'
         return state
 
-    def update_shipment(self):
-        shipment = self.start.shipment
+    def default_endicia_config(self, data):
+        return {
+            'endicia_label_subtype': self.shipment.endicia_label_subtype,
+            'endicia_integrated_form_type':
+                self.shipment.endicia_integrated_form_type,
+            'endicia_include_postage': self.shipment.endicia_include_postage,
+            'endicia_package_type': self.shipment.endicia_package_type,
+        }
 
-        if self.start.carrier.carrier_cost_method == 'endicia':
-            shipment.endicia_mailclass = self.endicia_config.endicia_mailclass
-            shipment.endicia_mailpiece_shape = \
-                self.endicia_config.endicia_mailpiece_shape
+    def transition_shipping_labels(self):
+        if self.start.carrier.carrier_cost_method == "endicia":
+            shipment = self.shipment
             shipment.endicia_label_subtype = \
                 self.endicia_config.endicia_label_subtype
             shipment.endicia_integrated_form_type = \
@@ -674,5 +485,6 @@ class GenerateShippingLabel(Wizard):
                 self.endicia_config.endicia_package_type
             shipment.endicia_include_postage = \
                 self.endicia_config.endicia_include_postage
+            shipment.save()
 
-        return super(GenerateShippingLabel, self).update_shipment()
+        return super(GenerateShippingLabel, self).transition_shipping_labels()
