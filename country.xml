@@ -16,5 +16,10 @@
             <field name="code">KP</field>
             <field name="endicia_country_name">North Korea</field>
         </record>
+        <record model="country.country" id="country.tw">
+            <field name="name">Taiwan, Province of China</field>
+            <field name="code">TW</field>
+            <field name="endicia_country_name">Taiwan</field>
+        </record>
     </data>
 </tryton>
