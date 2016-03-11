@@ -153,7 +153,7 @@ class ShipmentOut:
             'CustomsSigner': user.name,
         })
 
-    def generate_shipping_labels(self):
+    def generate_shipping_labels(self, **kwargs):
         """
         Make labels for the given shipment
 
@@ -164,7 +164,7 @@ class ShipmentOut:
         Uom = Pool().get('product.uom')
 
         if self.carrier_cost_method != 'endicia':
-            return super(ShipmentOut, self).generate_shipping_labels()
+            return super(ShipmentOut, self).generate_shipping_labels(**kwargs)
 
         label_request = LabelRequest(
             Test=self.carrier.endicia_is_test and 'YES' or 'NO',
