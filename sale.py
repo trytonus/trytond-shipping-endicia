@@ -88,6 +88,13 @@ class Sale:
             response = objectify_response(response_xml)
         except RequestError, e:
             self.raise_user_error(unicode(e))
+        except Exception, e:
+            if not silent:
+                raise
+            logger.debug('--------ENDICIA ERROR-----------')
+            logger.debug(unicode(e))
+            logger.debug('--------ENDICIA END ERROR-----------')
+            return []
 
         # Logging.
         logger.debug('--------POSTAGE RATES RESPONSE--------')
