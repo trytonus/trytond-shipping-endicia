@@ -50,7 +50,7 @@ class ShipmentOut:
     endicia_shipment_bag = fields.Many2One(
         'endicia.shipment.bag', 'Endicia Shipment Bag')
     endicia_label_subtype = fields.Selection([
-        ('None', 'None'),
+        (None, 'None'),
         ('Integrated', 'Integrated')
     ], 'Label Subtype', states=ENDICIA_STATES, depends=ENDICIA_DEPENDS)
     endicia_integrated_form_type = fields.Selection([
@@ -70,6 +70,18 @@ class ShipmentOut:
             'invisible': Eval('carrier_cost_method') != 'endicia'
         }, depends=ENDICIA_DEPENDS
     )
+
+    @classmethod
+    def __register__(cls, module):
+        super(ShipmentOut, cls).__register__(module)
+
+        # endicia_label_subtype selection "None" has been changed to NULL
+        cursor = Transaction().cursor
+        cursor.execute("""
+            UPDATE stock_shipment_out
+            SET endicia_label_subtype = NULL
+            WHERE endicia_label_subtype = 'None'
+        """)
 
     @classmethod
     def __setup__(cls):
