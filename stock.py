@@ -71,6 +71,10 @@ class ShipmentOut:
         }, depends=ENDICIA_DEPENDS
     )
 
+    @staticmethod
+    def default_endicia_package_type():
+        return "Other"
+
     @classmethod
     def __register__(cls, module):
         super(ShipmentOut, cls).__register__(module)
