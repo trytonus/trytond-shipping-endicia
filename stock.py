@@ -268,11 +268,12 @@ class ShipmentOut:
             logger.debug('--------END RESPONSE--------')
 
             tracking_number = unicode(result.TrackingNumber.pyval)
+            stock_package = self.packages[0]
             tracking, = Tracking.create([{
                 'carrier': self.carrier,
                 'tracking_number': tracking_number,
                 'origin': '%s,%d' % (
-                    self.__name__, self.id
+                    stock_package.__name__, stock_package.id
                 ),
             }])
 
