@@ -109,12 +109,15 @@ class Sale:
             service = allowed_services.get(postage_price.MailClass)
             if not service:
                 continue
+            currency = Currency(ModelData.get_id('currency', 'usd'))
             rates.append({
                 'display_name': "USPS %s" % (service.name, ),
                 'carrier': carrier,
                 'carrier_service': service,
-                'cost': Decimal(postage_price.get('TotalAmount')),
-                'cost_currency': Currency(ModelData.get_id('currency', 'usd'))
+                'cost': currency.round(
+                    Decimal(postage_price.get('TotalAmount'))
+                ),
+                'cost_currency': currency
             })
 
         if carrier_service:
