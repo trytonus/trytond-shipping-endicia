@@ -271,11 +271,13 @@ class ShipmentOut:
             tracking, = Tracking.create([{
                 'carrier': self.carrier,
                 'tracking_number': tracking_number,
-                'is_master': True,
                 'origin': '%s,%d' % (
                     self.__name__, self.id
                 ),
             }])
+
+            self.tracking_number = tracking.id
+            self.save()
 
             self.__class__.write([self], {
                 'cost': Decimal(str(result.FinalPostage.pyval)),

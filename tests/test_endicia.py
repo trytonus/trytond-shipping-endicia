@@ -416,7 +416,7 @@ class TestUSPSEndicia(BaseTestCase):
             with Transaction().set_context(company=self.company.id):
 
                 # Call method to generate labels.
-                shipment.make_endicia_labels()
+                shipment.generate_shipping_labels()
 
             self.assertTrue(shipment.tracking_number)
             self.assertTrue(
@@ -453,7 +453,7 @@ class TestUSPSEndicia(BaseTestCase):
             with Transaction().set_context(company=self.company.id):
 
                 # Call method to generate labels.
-                shipment.make_endicia_labels()
+                shipment.generate_shipping_labels()
 
             self.assertTrue(shipment.tracking_number)
             self.assertTrue(
@@ -686,7 +686,7 @@ class TestUSPSEndicia(BaseTestCase):
             with Transaction().set_context(company=self.company.id):
 
                 # Call method to generate labels.
-                shipment.make_endicia_labels()
+                shipment.generate_shipping_labels()
 
             self.assertTrue(shipment.tracking_number)
             self.assertTrue(
@@ -732,7 +732,7 @@ class TestUSPSEndicia(BaseTestCase):
             with Transaction().set_context(company=self.company.id):
 
                 # Call method to generate labels.
-                shipment.make_endicia_labels()
+                shipment.generate_shipping_labels()
 
             self.assertTrue(shipment.tracking_number)
             self.assertTrue(
