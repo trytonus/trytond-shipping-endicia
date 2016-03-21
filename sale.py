@@ -1,12 +1,14 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 from decimal import Decimal
+from babel.numbers import format_currency
 import logging
 
 from endicia import PostageRatesAPI
 from endicia.tools import objectify_response
 from endicia.exceptions import RequestError
 from trytond.model import fields
+from trytond.transaction import Transaction
 from trytond.pool import PoolMeta, Pool
 
 
@@ -109,16 +111,26 @@ class Sale:
             service = allowed_services.get(postage_price.MailClass)
             if not service:
                 continue
+
             currency = Currency(ModelData.get_id('currency', 'usd'))
-            rates.append({
-                'display_name': "USPS %s" % (service.name, ),
+            rate = {
                 'carrier': carrier,
                 'carrier_service': service,
                 'cost': currency.round(
                     Decimal(postage_price.get('TotalAmount'))
                 ),
                 'cost_currency': currency
-            })
+            }
+
+            display_name = "USPS %s %s" % (
+                service.name, format_currency(
+                    rate['cost'], rate['cost_currency'].code,
+                    locale=Transaction().language
+                )
+            )
+            rate['display_name'] = display_name
+
+            rates.append(rate)
 
         if carrier_service:
             return filter(
