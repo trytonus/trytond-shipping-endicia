@@ -4,139 +4,66 @@
 
 """
 import base64
-from datetime import datetime
 
-from trytond.model import Workflow, ModelSQL, ModelView, fields
-from trytond.pool import Pool
-from trytond.pyson import Eval
+from trytond.model import Workflow, ModelView
+from trytond.pool import Pool, PoolMeta
 
 from endicia import SCANFormAPI
-
 from endicia.tools import objectify_response
 
-__all__ = ['EndiciaShipmentBag']
+__metaclass__ = PoolMeta
+__all__ = ['ShippingManifest']
 
 
-class EndiciaShipmentBag(Workflow, ModelSQL, ModelView):
-    "Shipment Bag"
-    __name__ = 'endicia.shipment.bag'
-
-    state = fields.Selection([
-        ('open', 'Open'),
-        ('closed', 'Closed'),
-    ], 'State', readonly=True, required=True)
-
-    shipments = fields.One2Many(
-        'stock.shipment.out', 'endicia_shipment_bag', 'Shipments',
-        states={
-            'readonly': Eval('state') != 'open',
-        },
-        domain=[
-            ('carrier.carrier_cost_method', '=', 'endicia'),
-            ('state', '=', 'done'),
-        ],
-        add_remove=[
-            ('carrier.carrier_cost_method', '=', 'endicia'),
-            ('endicia_shipment_bag', '=', None),
-            ('state', '=', 'done'),
-        ], depends=['state']
-    )
-    carrier = fields.Many2One(
-        'carrier', 'Endicia Carrier', required=True, select=True,
-        domain=[('carrier_cost_method', '=', 'endicia')]
-    )
-    submission_id = fields.Char('Submission Id', readonly=True, select=True)
-
-    open_date = fields.Date('Open Date', readonly=True, required=True)
-    close_date = fields.Date('Close Date', readonly=True)
+class ShippingManifest:
+    __name__ = 'shipping.manifest'
 
     @classmethod
     def __setup__(cls):
-        super(EndiciaShipmentBag, cls).__setup__()
-
-        cls._transitions |= set((
-            ('open', 'closed'),
-        ))
+        super(ShippingManifest, cls).__setup__()
 
         cls._error_messages.update({
-            'bag_empty': 'Bag should have atleast one shipment.',
             'error_scanform': 'Error in generating scanform "%s"',
         })
-
-        cls._buttons.update({
-            'close': {
-                'invisible': Eval('state').in_(['closed']),
-            },
-        })
-
-    def get_rec_name(self, name):
-        return self.submission_id or str(self.id)
-
-    @staticmethod
-    def default_state():
-        return 'open'
-
-    @staticmethod
-    def default_open_date():
-        return datetime.utcnow().date()
-
-    @classmethod
-    def get_bag(cls, carrier):
-        """
-        Returns currently opened bag and make sure only one bag is opened at a
-        time.
-        This method can be inherited to change the logic of bag opening.
-        """
-        bags = cls.search([('state', '=', 'open')])
-
-        assert len(bags) < 2  # Assert at max we have 1 open bags.
-        if bags:
-            # Return if a bag is opened.
-            return bags[0]
-        return cls.create([{'carrier', '=', carrier.id}])[0]
 
     @classmethod
     @ModelView.button
     @Workflow.transition('closed')
-    def close(cls, bags):
-        for bag in bags:
-            bag.make_scanform()
-        cls.write(bags, {
-            'close_date': datetime.utcnow().date()
-        })
-
-    def make_scanform(self):
+    def close(cls, manifests):
         """
-        Generate the SCAN Form for bag
+        Generate the SCAN Form for manifest
         """
         Attachment = Pool().get('ir.attachment')
 
-        if not self.shipments:
-            self.raise_user_error('bag_empty')
+        super(ShippingManifest, cls).close(manifests)
+        for manifest in manifests:
+            if not manifest.shipments:
+                manifest.raise_user_error('manifest_empty')
 
-        pic_numbers = [
-            shipment.tracking_number.tracking_number
-            for shipment in self.shipments if shipment.tracking_number
-        ]
-        test = self.carrier.endicia_is_test and 'Y' or 'N'
-        scan_request = SCANFormAPI(
-            pic_numbers=pic_numbers,
-            accountid=self.carrier.endicia_account_id,
-            requesterid=self.carrier.endicia_requester_id,
-            passphrase=self.carrier.endicia_passphrase,
-            test=test,
-        )
-        response = scan_request.send_request()
-        result = objectify_response(response)
-        if not hasattr(result, 'SCANForm'):
-            self.raise_user_error(
-                'error_scanform', error_args=(result.ErrorMsg,)
+            if manifest.carrier_cost_method != 'endicia':
+                continue
+
+            pic_numbers = [
+                shipment.tracking_number.tracking_number
+                for shipment in manifest.shipments if shipment.tracking_number
+            ]
+            test = manifest.carrier.endicia_is_test and 'Y' or 'N'
+            scan_request = SCANFormAPI(
+                pic_numbers=pic_numbers,
+                accountid=manifest.carrier.endicia_account_id,
+                requesterid=manifest.carrier.endicia_requester_id,
+                passphrase=manifest.carrier.endicia_passphrase,
+                test=test,
             )
-        else:
-            self.submission_id = str(result.SubmissionID)
-            self.save()
-            Attachment.create([{
-                'name': 'SCAN%s.png' % str(result.SubmissionID),
-                'data': buffer(base64.decodestring(result.SCANForm.pyval)),
-                'resource': '%s,%s' % (self.__name__, self.id)
-            }])
+            response = scan_request.send_request()
+            result = objectify_response(response)
+            if not hasattr(result, 'SCANForm'):
+                manifest.raise_user_error(
+                    'error_scanform', error_args=(result.ErrorMsg,)
+                )
+            else:
+                Attachment.create([{
+                    'name': 'SCAN%s.png' % str(result.SubmissionID),
+                    'data': buffer(base64.decodestring(result.SCANForm.pyval)),
+                    'resource': '%s,%s' % (manifest.__name__, manifest.id)
+                }])
