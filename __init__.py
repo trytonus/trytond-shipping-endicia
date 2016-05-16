@@ -11,7 +11,7 @@ from stock import (
     BuyPostageWizardView, BuyPostageWizard, ShippingEndicia,
     GenerateShippingLabel
 )
-from shipment_bag import EndiciaShipmentBag
+from shipment_bag import ShippingManifest
 from carrier import Carrier, CarrierService, BoxType
 from sale import Configuration, Sale
 from country import Country
@@ -25,7 +25,7 @@ def register():
         BoxType,
         Configuration,
         Sale,
-        EndiciaShipmentBag,
+        ShippingManifest,
         ShipmentOut,
         EndiciaRefundRequestWizardView,
         BuyPostageWizardView,

@@ -47,8 +47,6 @@ class ShipmentOut:
     "Shipment Out"
     __name__ = 'stock.shipment.out'
 
-    endicia_shipment_bag = fields.Many2One(
-        'endicia.shipment.bag', 'Endicia Shipment Bag')
     endicia_label_subtype = fields.Selection([
         (None, 'None'),
         ('Integrated', 'Integrated')
@@ -104,9 +102,9 @@ class ShipmentOut:
     @Workflow.transition('done')
     def done(cls, shipments):
         """
-        Add endicia shipments to a open bag
+        Add endicia shipments to a open manifest
         """
-        EndiciaShipmentBag = Pool().get('endicia.shipment.bag')
+        ShippingManifest = Pool().get('shipping.manifest')
 
         super(ShipmentOut, cls).done(shipments)
 
@@ -114,8 +112,10 @@ class ShipmentOut:
             if shipment.carrier and \
                     shipment.carrier.carrier_cost_method == 'endicia':
                 with Transaction().set_user(0):
-                    bag = EndiciaShipmentBag.get_bag(shipment.carrier)
-                shipment.endicia_shipment_bag = bag
+                    manifest = ShippingManifest.get_manifest(
+                        shipment.carrier, shipment.warehouse
+                    )
+                shipment.manifest = manifest
                 shipment.save()
 
     def _update_endicia_item_details(self, request):
