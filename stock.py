@@ -287,6 +287,7 @@ class ShipmentOut:
             # Save images as attachments
             images = get_images(result)
             for (id, label) in images:
+                label = stock_package._process_raw_label(label)
                 Attachment.create([{
                     'name': "%s_%s_USPS-Endicia.png" % (tracking_number, id),
                     'data': buffer(base64.decodestring(label)),
