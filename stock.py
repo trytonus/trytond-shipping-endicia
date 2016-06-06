@@ -291,7 +291,9 @@ class ShipmentOut:
                 Attachment.create([{
                     'name': "%s_%s_USPS-Endicia.png" % (tracking_number, id),
                     'data': buffer(base64.decodestring(label)),
-                    'resource': '%s,%s' % (self.__name__, self.id)
+                    'resource': '%s,%d' % (
+                        self.tracking_number.__name__, self.tracking_number.id
+                    )
                 }])
 
 
