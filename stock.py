@@ -10,7 +10,7 @@ from endicia.tools import objectify_response, get_images
 from endicia.exceptions import RequestError
 
 from trytond.model import Workflow, ModelView, fields
-from trytond.wizard import Wizard, StateView, Button
+from trytond.wizard import Wizard, StateView, Button, StateTransition
 from trytond.transaction import Transaction
 from trytond.pool import Pool, PoolMeta
 from trytond.pyson import Eval
@@ -74,18 +74,6 @@ class ShipmentOut:
         return "Other"
 
     @classmethod
-    def __register__(cls, module):
-        super(ShipmentOut, cls).__register__(module)
-
-        # endicia_label_subtype selection "None" has been changed to NULL
-        cursor = Transaction().cursor
-        cursor.execute("""
-            UPDATE stock_shipment_out
-            SET endicia_label_subtype = NULL
-            WHERE endicia_label_subtype = 'None'
-        """)
-
-    @classmethod
     def __setup__(cls):
         super(ShipmentOut, cls).__setup__()
         cls._error_messages.update({
@@ -132,7 +120,7 @@ class ShipmentOut:
         customsitems = []
         value = 0
 
-        for move in self.outgoing_moves:
+        for move in self.carrier_cost_moves:
             if move.quantity <= 0:
                 continue
             weight_oz = quantize_2_decimal(move.get_weight(uom_oz))
@@ -148,7 +136,7 @@ class ShipmentOut:
             value += float(move.product.customs_value_used) * move.quantity
 
         description = ','.join([
-            move.product.name for move in self.outgoing_moves
+            move.product.name for move in self.carrier_cost_moves
         ])
         request.add_data({
             'customsinfo': [
@@ -159,7 +147,7 @@ class ShipmentOut:
         })
         total_value = sum(map(
             lambda move: float(move.product.cost_price) * move.quantity,
-            self.outgoing_moves
+            self.carrier_cost_moves
         ))
         request.add_data({
             'ContentsType': self.endicia_package_type,
@@ -475,10 +463,12 @@ class GenerateShippingLabel(Wizard):
         [
             Button('Back', 'start', 'tryton-go-previous'),
             Button(
-                'Continue', 'generate_labels', 'tryton-go-next', default=True
+                'Continue', 'save_endicia_config', 'tryton-go-next',
+                default=True
             ),
         ]
     )
+    save_endicia_config = StateTransition()
 
     def transition_next(self):
         state = super(GenerateShippingLabel, self).transition_next()
@@ -496,17 +486,16 @@ class GenerateShippingLabel(Wizard):
             'endicia_package_type': self.shipment.endicia_package_type,
         }
 
-    def transition_shipping_labels(self):
-        if self.start.carrier.carrier_cost_method == "endicia":
-            shipment = self.shipment
-            shipment.endicia_label_subtype = \
-                self.endicia_config.endicia_label_subtype
-            shipment.endicia_integrated_form_type = \
-                self.endicia_config.endicia_integrated_form_type
-            shipment.endicia_package_type = \
-                self.endicia_config.endicia_package_type
-            shipment.endicia_include_postage = \
-                self.endicia_config.endicia_include_postage
-            shipment.save()
+    def transition_save_endicia_config(self):
+        shipment = self.shipment
+        shipment.endicia_label_subtype = \
+            self.endicia_config.endicia_label_subtype
+        shipment.endicia_integrated_form_type = \
+            self.endicia_config.endicia_integrated_form_type
+        shipment.endicia_package_type = \
+            self.endicia_config.endicia_package_type
+        shipment.endicia_include_postage = \
+            self.endicia_config.endicia_include_postage
+        shipment.save()
 
-        return super(GenerateShippingLabel, self).transition_shipping_labels()
+        return 'select_rate'
