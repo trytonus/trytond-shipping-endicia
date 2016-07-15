@@ -146,7 +146,7 @@ class ShipmentOut:
             ]
         })
         total_value = sum(map(
-            lambda move: float(move.product.cost_price) * move.quantity,
+            lambda move: float(move.product.customs_value_used) * move.quantity,
             self.carrier_cost_moves
         ))
         request.add_data({
