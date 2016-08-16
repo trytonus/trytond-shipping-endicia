@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0"?>
 <form string="Request Refund" col="2">
     <label name="refund_approved"/>
     <field name="refund_approved"/>

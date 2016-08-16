@@ -12,7 +12,6 @@ ENDICIA_STATES = {
 
 
 class Carrier:
-    "Carrier"
     __name__ = 'carrier'
 
     endicia_account_id = fields.Char('Account Id', states=ENDICIA_STATES)
@@ -28,6 +27,16 @@ class Carrier:
         selection = ('endicia', 'USPS (Direct)')
         if selection not in cls.carrier_cost_method.selection:
             cls.carrier_cost_method.selection.append(selection)
+
+    @classmethod
+    def view_attributes(cls):
+        return super(Carrier, cls).view_attributes() + [
+            (
+                '//group[@id="endicia_configuration"]', 'states', {
+                    'invisible': Eval('carrier_cost_method') != 'endicia'
+                }
+            )
+        ]
 
 
 class CarrierService:

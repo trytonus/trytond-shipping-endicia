@@ -5,7 +5,6 @@ this repository contains the full copyright notices and license terms. -->
     <data>
         <record model="ir.ui.view" id="sale_configuration_view_form">
             <field name="model">sale.configuration</field>
-            <field name="type">form</field>
             <field name="inherit" ref="sale.sale_configuration_view_form"/>
             <field name="name">sale_configuration_view_form</field>
         </record>
