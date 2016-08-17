@@ -25,6 +25,8 @@ class SQLiteTest(Command):
         pass
 
     def run(self):
+        if self.distribution.tests_require:
+            self.distribution.fetch_build_eggs(self.distribution.tests_require)
         os.environ['TRYTOND_DATABASE_URI'] = "sqlite://"
         os.environ['DB_NAME'] = ':memory:'
 
@@ -185,6 +187,7 @@ setup(
     """ % (MODULE, MODULE),
     test_suite='tests',
     test_loader='trytond.test_loader:Loader',
+    tests_require=['trytond_product_measurements>=4.0,<4.1'],
     cmdclass={
         'xmltests': XMLTests,
         'audit': RunAudit,

@@ -12,8 +12,8 @@ from dateutil.relativedelta import relativedelta
 import unittest
 
 import trytond.tests.test_tryton
-from trytond.tests.test_tryton import POOL, DB_NAME, USER, CONTEXT, \
-    test_view, test_depends
+from trytond.tests.test_tryton import POOL, USER, ModuleTestCase, \
+    with_transaction
 from trytond.transaction import Transaction
 from trytond.config import config
 config.set('database', 'path', '/tmp')
@@ -25,6 +25,8 @@ class BaseTestCase(unittest.TestCase):
     """
     def setUp(self):
         trytond.tests.test_tryton.install_module('shipping_endicia')
+        trytond.tests.test_tryton.install_module('product_measurements')
+
         self.Sale = POOL.get('sale.sale')
         self.SaleConfig = POOL.get('sale.configuration')
         self.CarrierService = POOL.get('carrier.service')
@@ -59,9 +61,10 @@ class BaseTestCase(unittest.TestCase):
             'account.create_chart', type="wizard"
         )
 
-        account_template, = AccountTemplate.search(
-            [('parent', '=', None)]
-        )
+        account_template, = AccountTemplate.search([
+            ('parent', '=', None),
+            ('name', '=', 'Minimal Account Chart')
+        ])
 
         session_id, _, _ = account_create_chart.create()
         create_chart = account_create_chart(session_id)
@@ -224,7 +227,9 @@ class BaseTestCase(unittest.TestCase):
             }
         )
 
-        CONTEXT.update(self.User.get_preferences(context_only=True))
+        Transaction().context.update(
+            self.User.get_preferences(context_only=True)
+        )
 
         self._create_fiscal_year(company=self.company)
         self._create_coa_minimal(company=self.company)
@@ -245,7 +250,7 @@ class BaseTestCase(unittest.TestCase):
         # Carrier Carrier Product
         carrier_product_template, = self.Template.create([{
             'name': 'Test Carrier Product',
-            'category': category.id,
+            'categories': [('add', [category.id])],
             'type': 'service',
             'salable': True,
             'sale_uom': uom_kg,
@@ -262,7 +267,7 @@ class BaseTestCase(unittest.TestCase):
         # Create product
         template, = self.Template.create([{
             'name': 'Test Product',
-            'category': category.id,
+            'categories': [('add', [category.id])],
             'type': 'goods',
             'salable': True,
             'sale_uom': uom_kg,
@@ -365,381 +370,270 @@ class BaseTestCase(unittest.TestCase):
             # Confirm and process sale order
             self.assertEqual(len(sale.lines), 1)
             self.Sale.quote([sale])
-            self.assertEqual(len(sale.lines), 2)
             self.Sale.confirm([sale])
             self.Sale.process([sale])
 
             return sale
 
 
-class TestUSPSEndicia(BaseTestCase):
+class TestUSPSEndicia(BaseTestCase, ModuleTestCase):
     """
     Test USPS with Endicia.
     """
+    module = "shipping_endicia"
 
-    def test0005views(self):
-        '''
-        Test views.
-        '''
-        test_view('shipping_endicia')
-
-    def test0006depends(self):
-        '''
-        Test depends.
-        '''
-        test_depends()
-
+    @with_transaction()
     def test_0010_generate_endicia_gss_labels(self):
         """Test case to generate Endicia labels.
         """
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
+        # Call method to create sale order
+        self.setup_defaults()
 
-            # Call method to create sale order
-            self.setup_defaults()
+        shipment, = self.StockShipmentOut.search([])
+        self.StockShipmentOut.write([shipment], {
+            'number': str(int(time())),
+        })
 
-            shipment, = self.StockShipmentOut.search([])
-            self.StockShipmentOut.write([shipment], {
-                'code': str(int(time())),
-            })
+        # Before generating labels
+        # There is no tracking number generated
+        # And no attachment cerated for labels
+        self.assertFalse(shipment.tracking_number)
+        attatchment = self.IrAttachment.search([])
+        self.assertEqual(len(attatchment), 0)
 
-            # Before generating labels
-            # There is no tracking number generated
-            # And no attachment cerated for labels
-            self.assertFalse(shipment.tracking_number)
-            attatchment = self.IrAttachment.search([])
-            self.assertEqual(len(attatchment), 0)
+        # Make shipment in packed state.
+        shipment.assign([shipment])
+        shipment.pack([shipment])
 
-            # Make shipment in packed state.
-            shipment.assign([shipment])
-            shipment.pack([shipment])
+        with Transaction().set_context(company=self.company.id):
 
-            with Transaction().set_context(company=self.company.id):
+            # Call method to generate labels.
+            shipment.generate_shipping_labels()
 
-                # Call method to generate labels.
-                shipment.generate_shipping_labels()
+        self.assertTrue(shipment.tracking_number)
+        self.assertTrue(
+            self.IrAttachment.search([
+                ('resource', '=', 'stock.shipment.out,%s' % shipment.id)
+            ], count=True) > 0
+        )
 
-            self.assertTrue(shipment.tracking_number)
-            self.assertTrue(
-                self.IrAttachment.search([
-                    ('resource', '=', 'stock.shipment.out,%s' % shipment.id)
-                ], count=True) > 0
-            )
-
-    def test_0015_generate_endicia_flat_label(self):
-        """Test case to generate Endicia labels.
-        """
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
-
-            # Call method to create sale order
-            self.setup_defaults()
-
-            shipment, = self.StockShipmentOut.search([])
-            self.StockShipmentOut.write([shipment], {
-                'code': str(int(time())),
-                'endicia_mailpiece_shape': 'Flat',
-            })
-
-            # Before generating labels
-            # There is no tracking number generated
-            # And no attachment cerated for labels
-            self.assertFalse(shipment.tracking_number)
-            attatchment = self.IrAttachment.search([])
-            self.assertEqual(len(attatchment), 0)
-
-            # Make shipment in packed state.
-            shipment.assign([shipment])
-            shipment.pack([shipment])
-
-            with Transaction().set_context(company=self.company.id):
-
-                # Call method to generate labels.
-                shipment.generate_shipping_labels()
-
-            self.assertTrue(shipment.tracking_number)
-            self.assertTrue(
-                self.IrAttachment.search([
-                    ('resource', '=', 'stock.shipment.out,%s' % shipment.id)
-                ], count=True) > 0
-            )
-
+    @with_transaction()
     def test_0016_generate_endicia_flat_label_using_wizard(self):
         """
         Test case to generate Endicia labels using wizard
         """
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
+        # Call method to create sale order
+        self.setup_defaults()
 
-            # Call method to create sale order
-            self.setup_defaults()
+        shipment, = self.StockShipmentOut.search([])
+        self.StockShipmentOut.write([shipment], {
+            'code': str(int(time())),
+            'endicia_mailpiece_shape': 'Flat',
+        })
 
-            shipment, = self.StockShipmentOut.search([])
-            self.StockShipmentOut.write([shipment], {
-                'code': str(int(time())),
-                'endicia_mailpiece_shape': 'Flat',
-            })
+        # Before generating labels
+        # There is no tracking number generated
+        # And no attachment cerated for labels
+        self.assertFalse(shipment.tracking_number)
+        attatchment = self.IrAttachment.search([])
+        self.assertEqual(len(attatchment), 0)
 
-            # Before generating labels
-            # There is no tracking number generated
-            # And no attachment cerated for labels
-            self.assertFalse(shipment.tracking_number)
-            attatchment = self.IrAttachment.search([])
-            self.assertEqual(len(attatchment), 0)
+        # Make shipment in packed state.
+        shipment.assign([shipment])
+        shipment.pack([shipment])
 
-            # Make shipment in packed state.
-            shipment.assign([shipment])
-            shipment.pack([shipment])
+        with Transaction().set_context(
+            company=self.company.id, active_id=shipment,
+            active_model="stock.shipment.out"
+        ):
+            # Call method to generate labels.
+            session_id, start_state, _ = self.GenerateLabel.create()
 
-            with Transaction().set_context(
-                company=self.company.id, active_id=shipment
-            ):
-                # Call method to generate labels.
-                session_id, start_state, _ = self.GenerateLabel.create()
+            generate_label = self.GenerateLabel(session_id)
 
-                generate_label = self.GenerateLabel(session_id)
+            result = generate_label.default_start({})
 
-                result = generate_label.default_start({})
+            self.assertEqual(result['shipment'], shipment.id)
+            self.assertEqual(result['carrier'], shipment.carrier.id)
 
-                self.assertEqual(result['shipment'], shipment.id)
-                self.assertEqual(result['carrier'], shipment.carrier.id)
-
-                generate_label.start.shipment = result['shipment']
-                generate_label.start.carrier = result['carrier']
-                generate_label.start.override_weight = None
-
-                self.assertEqual(
-                    generate_label.transition_next(), 'endicia_config'
-                )
-
-                result = generate_label.default_endicia_config({})
-
-                self.assertEqual(
-                    result['endicia_label_subtype'],
-                    shipment.endicia_label_subtype
-                )
-
-                self.assertEqual(
-                    result['endicia_integrated_form_type'],
-                    shipment.endicia_integrated_form_type
-                )
-                self.assertEqual(
-                    result['endicia_package_type'],
-                    shipment.endicia_package_type
-                )
-
-                self.assertEqual(
-                    result['endicia_include_postage'],
-                    shipment.endicia_include_postage
-                )
-
-                generate_label.endicia_config.endicia_label_subtype = \
-                    result['endicia_label_subtype']
-                generate_label.endicia_config.endicia_integrated_form_type = \
-                    result['endicia_integrated_form_type']
-                generate_label.endicia_config.endicia_package_type = \
-                    result['endicia_package_type']
-                generate_label.endicia_config.endicia_include_postage = \
-                    result['endicia_include_postage']
-
-                result = generate_label.default_generate({})
-
-                self.assertEqual(
-                    result['message'],
-                    'Shipment labels have been generated via ENDICIA and '
-                    'saved as attachments for the shipment'
-                )
-
-            self.assertTrue(shipment.tracking_number)
-            self.assertTrue(
-                self.IrAttachment.search([
-                    ('resource', '=', 'stock.shipment.out,%s' % shipment.id)
-                ], count=True) > 0
-            )
-
-    def test_0020_shipment_bag(self):
-        """Test case for shipment bag
-        """
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
-            EndiciaShipmentBag = POOL.get('endicia.shipment.bag')
-            ShipmentOut = POOL.get('stock.shipment.out')
-
-            # Call method to create sale order
-            self.setup_defaults()
-            self.create_sale(self.sale_party)  # Create second sale and shipment
-
-            shipments = self.StockShipmentOut.search([])
-
-            # Make shipments in packed state.
-            ShipmentOut.assign(shipments)
-            ShipmentOut.pack(shipments)
-            ShipmentOut.done(shipments)
-
-            bags = EndiciaShipmentBag.search(())
-            self.assertTrue(len(bags), 1)
-            bag = bags[0]
-            self.assertFalse(bag.submission_id)
-            self.assertEqual(len(bag.shipments), 2)
-            EndiciaShipmentBag.close([bag])
-            self.assertTrue(bag.submission_id)
+            generate_label.start.shipment = result['shipment']
+            generate_label.start.carrier = result['carrier']
+            generate_label.start.override_weight = None
 
             self.assertEqual(
-                self.IrAttachment.search([
-                    ('resource', '=', 'endicia.shipment.bag,%s' % bag.id)
-                ], count=True), 1
+                generate_label.transition_next(), 'endicia_config'
             )
 
-            # Create new sale and shipment
-            self.create_sale(self.sale_party)
-
-            shipment, = self.StockShipmentOut.search([
-                ('state', '=', 'waiting')
-            ])
-
-            # Make shipment in packed state.
-            ShipmentOut.assign([shipment])
-            ShipmentOut.pack([shipment])
-            ShipmentOut.done([shipment])
-
-            self.assertEqual(EndiciaShipmentBag.search([], count=True), 2)
-
-            bag, = EndiciaShipmentBag.search([('state', '=', 'open')])
-            self.assertFalse(bag.submission_id)
-            self.assertEqual(len(bag.shipments), 1)
-            self.assertEqual(bag.shipments[0], shipment)
-            EndiciaShipmentBag.close([bag])
-            self.assertTrue(bag.submission_id)
+            result = generate_label.default_endicia_config({})
 
             self.assertEqual(
-                self.IrAttachment.search([
-                    ('resource', '=', 'endicia.shipment.bag,%s' % bag.id)
-                ], count=True), 1
+                result['endicia_label_subtype'],
+                shipment.endicia_label_subtype
             )
 
+            self.assertEqual(
+                result['endicia_integrated_form_type'],
+                shipment.endicia_integrated_form_type
+            )
+            self.assertEqual(
+                result['endicia_package_type'],
+                shipment.endicia_package_type
+            )
+
+            self.assertEqual(
+                result['endicia_include_postage'],
+                shipment.endicia_include_postage
+            )
+
+            generate_label.endicia_config.endicia_label_subtype = \
+                result['endicia_label_subtype']
+            generate_label.endicia_config.endicia_integrated_form_type = \
+                result['endicia_integrated_form_type']
+            generate_label.endicia_config.endicia_package_type = \
+                result['endicia_package_type']
+            generate_label.endicia_config.endicia_include_postage = \
+                result['endicia_include_postage']
+
+            result = generate_label.default_generate({})
+
+            self.assertEqual(
+                result['message'],
+                'Shipment labels have been generated via ENDICIA and '
+                'saved as attachments for the shipment'
+            )
+
+        self.assertTrue(shipment.tracking_number)
+        self.assertTrue(
+            self.IrAttachment.search([
+                ('resource', '=', 'stock.shipment.out,%s' % shipment.id)
+            ], count=True) > 0
+        )
+
+    @with_transaction()
     def test_0030_endicia_shipping_rates(self):
         """
         Tests get_endicia_shipping_rates method.
         """
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
-            self.setup_defaults()
+        self.setup_defaults()
 
-            with Transaction().set_context(company=self.company.id):
+        with Transaction().set_context(company=self.company.id):
 
-                # Create sale order
-                sale, = self.Sale.create([{
-                    'reference': 'S-1001',
-                    'payment_term': self.payment_term,
-                    'party': self.sale_party.id,
-                    'invoice_address': self.sale_party.addresses[0].id,
-                    'shipment_address': self.sale_party.addresses[0].id,
-                    'lines': [
-                        ('create', [{
-                            'type': 'line',
-                            'quantity': 1,
-                            'product': self.product,
-                            'unit_price': Decimal('10.00'),
-                            'description': 'Test Description1',
-                            'unit': self.product.template.default_uom,
-                        }]),
-                    ]
-                }])
+            # Create sale order
+            sale, = self.Sale.create([{
+                'reference': 'S-1001',
+                'payment_term': self.payment_term,
+                'party': self.sale_party.id,
+                'invoice_address': self.sale_party.addresses[0].id,
+                'shipment_address': self.sale_party.addresses[0].id,
+                'lines': [
+                    ('create', [{
+                        'type': 'line',
+                        'quantity': 1,
+                        'product': self.product,
+                        'unit_price': Decimal('10.00'),
+                        'description': 'Test Description1',
+                        'unit': self.product.template.default_uom,
+                    }]),
+                ]
+            }])
 
-                self.StockLocation.write([sale.warehouse], {
-                    'address': self.company.party.addresses[0].id,
-                })
+            self.StockLocation.write([sale.warehouse], {
+                'address': self.company.party.addresses[0].id,
+            })
 
-                self.assertEqual(len(sale.lines), 1)
+            self.assertEqual(len(sale.lines), 1)
 
-            with Transaction().set_context(sale=sale):
-                self.assertGreater(len(self.carrier.get_rates()), 0)
+        with Transaction().set_context(sale=sale):
+            self.assertGreater(len(self.carrier.get_shipping_rates()), 0)
 
+    @with_transaction()
     def test_0035_generate_endicia_flat_label_customs_form(self):
         """Test case to generate Endicia labels with customs forms
         """
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
+        # Call method to create sale order
+        self.setup_defaults()
 
-            # Call method to create sale order
-            self.setup_defaults()
+        endicia_mailclass, = self.CarrierService.search([
+            ('value', '=', 'PriorityMailInternational')
+        ])
 
-            endicia_mailclass, = self.EndiciaMailclass.search([
-                ('value', '=', 'PriorityMailInternational')
-            ])
+        shipment, = self.StockShipmentOut.search([])
+        self.StockShipmentOut.write([shipment], {
+            'code': str(int(time())),
+            'endicia_mailpiece_shape': 'Flat',
+            'endicia_integrated_form_type': 'Form2976',
+            'endicia_label_subtype': 'Integrated',
+            'endicia_mailclass': endicia_mailclass.id,
+            'delivery_address': self.sale_party.addresses[1].id,
+        })
 
-            shipment, = self.StockShipmentOut.search([])
-            self.StockShipmentOut.write([shipment], {
-                'code': str(int(time())),
-                'endicia_mailpiece_shape': 'Flat',
-                'endicia_integrated_form_type': 'Form2976',
-                'endicia_label_subtype': 'Integrated',
-                'endicia_mailclass': endicia_mailclass.id,
-                'delivery_address': self.sale_party.addresses[1].id,
-            })
+        # Before generating labels
+        # There is no tracking number generated
+        # And no attachment cerated for labels
+        self.assertFalse(shipment.tracking_number)
+        attatchment = self.IrAttachment.search([])
+        self.assertEqual(len(attatchment), 0)
 
-            # Before generating labels
-            # There is no tracking number generated
-            # And no attachment cerated for labels
-            self.assertFalse(shipment.tracking_number)
-            attatchment = self.IrAttachment.search([])
-            self.assertEqual(len(attatchment), 0)
+        # Make shipment in packed state.
+        shipment.assign([shipment])
+        shipment.pack([shipment])
 
-            # Make shipment in packed state.
-            shipment.assign([shipment])
-            shipment.pack([shipment])
+        with Transaction().set_context(company=self.company.id):
 
-            with Transaction().set_context(company=self.company.id):
+            # Call method to generate labels.
+            shipment.generate_shipping_labels()
 
-                # Call method to generate labels.
-                shipment.generate_shipping_labels()
+        self.assertTrue(shipment.tracking_number)
+        self.assertTrue(
+            self.IrAttachment.search([
+                ('resource', '=', 'stock.shipment.out,%s' % shipment.id)
+            ], count=True) > 1
+        )
 
-            self.assertTrue(shipment.tracking_number)
-            self.assertTrue(
-                self.IrAttachment.search([
-                    ('resource', '=', 'stock.shipment.out,%s' % shipment.id)
-                ], count=True) > 1
-            )
-
+    @with_transaction()
     def test_0040_generate_endicia_label_for_ca(self):
         """Test case to generate Endicia labels for ca
         """
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
+        # Call method to create sale order
+        self.setup_defaults()
 
-            # Call method to create sale order
-            self.setup_defaults()
+        endicia_mailclass, = self.CarrierService.search([
+            ('value', '=', 'First')
+        ])
 
-            endicia_mailclass, = self.EndiciaMailclass.search([
-                ('value', '=', 'First')
-            ])
+        shipment, = self.StockShipmentOut.search([])
+        self.StockShipmentOut.write([shipment], {
+            'code': str(int(time())),
+            'endicia_mailpiece_shape': None,
+            'endicia_package_type': 'Merchandise',
+            'endicia_integrated_form_type': 'Form2976',
+            'endicia_label_subtype': 'None',
+            'endicia_mailclass': endicia_mailclass.id,
+            'delivery_address': self.sale_party.addresses[2].id,
+        })
 
-            shipment, = self.StockShipmentOut.search([])
-            self.StockShipmentOut.write([shipment], {
-                'code': str(int(time())),
-                'endicia_mailpiece_shape': None,
-                'endicia_package_type': 'Merchandise',
-                'endicia_integrated_form_type': 'Form2976',
-                'endicia_label_subtype': 'None',
-                'endicia_mailclass': endicia_mailclass.id,
-                'delivery_address': self.sale_party.addresses[2].id,
-            })
+        # Before generating labels
+        # There is no tracking number generated
+        # And no attachment cerated for labels
+        self.assertFalse(shipment.tracking_number)
+        attatchment = self.IrAttachment.search([])
+        self.assertEqual(len(attatchment), 0)
 
-            # Before generating labels
-            # There is no tracking number generated
-            # And no attachment cerated for labels
-            self.assertFalse(shipment.tracking_number)
-            attatchment = self.IrAttachment.search([])
-            self.assertEqual(len(attatchment), 0)
+        # Make shipment in packed state.
+        shipment.assign([shipment])
+        shipment.pack([shipment])
 
-            # Make shipment in packed state.
-            shipment.assign([shipment])
-            shipment.pack([shipment])
+        with Transaction().set_context(company=self.company.id):
 
-            with Transaction().set_context(company=self.company.id):
+            # Call method to generate labels.
+            shipment.generate_shipping_labels()
 
-                # Call method to generate labels.
-                shipment.generate_shipping_labels()
-
-            self.assertTrue(shipment.tracking_number)
-            self.assertTrue(
-                self.IrAttachment.search([
-                    ('resource', '=', 'stock.shipment.out,%s' % shipment.id)
-                ], count=True) > 0
-            )
+        self.assertTrue(shipment.tracking_number)
+        self.assertTrue(
+            self.IrAttachment.search([
+                ('resource', '=', 'stock.shipment.out,%s' % shipment.id)
+            ], count=True) > 0
+        )
 
 
 def suite():

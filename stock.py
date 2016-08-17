@@ -44,7 +44,6 @@ def quantize_2_decimal(value):
 
 
 class ShipmentOut:
-    "Shipment Out"
     __name__ = 'stock.shipment.out'
 
     endicia_label_subtype = fields.Selection([
@@ -84,6 +83,16 @@ class ShipmentOut:
                 'shipment is in Packed or Done states only',
             'wrong_carrier': 'Carrier for selected shipment is not Endicia',
         })
+
+    @classmethod
+    def view_attributes(cls):
+        return super(ShipmentOut, cls).view_attributes() + [
+            (
+                '//group[@id="endicia"]', 'states', {
+                    'invisible': Eval('carrier_cost_method') != 'endicia'
+                }
+            )
+        ]
 
     @classmethod
     @ModelView.button
