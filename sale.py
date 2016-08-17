@@ -29,7 +29,7 @@ class Sale:
     "Sale"
     __name__ = 'sale.sale'
 
-    def get_shipping_rate(self, carrier, carrier_service=None, silent=False):
+    def get_shipping_rate(self, carrier, carrier_service=None):
         """
         Call the rates service and get possible quotes for shipment for eligible
         mail classes
@@ -40,7 +40,7 @@ class Sale:
 
         if carrier.carrier_cost_method != "endicia":
             return super(Sale, self).get_shipping_rate(
-                carrier, carrier_service, silent
+                carrier, carrier_service
             )
 
         from_address = self._get_ship_from_address()
@@ -89,12 +89,10 @@ class Sale:
         except RequestError, e:
             self.raise_user_error(unicode(e))
         except Exception, e:
-            if not silent:
-                raise
             logger.debug('--------ENDICIA ERROR-----------')
             logger.debug(unicode(e))
             logger.debug('--------ENDICIA END ERROR-----------')
-            return []
+            return [], [unicode(e)]
 
         # Logging.
         logger.debug('--------POSTAGE RATES RESPONSE--------')
@@ -130,5 +128,5 @@ class Sale:
             return filter(
                 lambda r: r['carrier_service'] == carrier_service,
                 rates
-            )
-        return rates
+            ), []
+        return rates, []
