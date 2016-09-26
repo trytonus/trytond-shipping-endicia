@@ -219,6 +219,28 @@ class ShipmentOut:
         shipping_label_request.mailpieceshape = package.box_type and \
             package.box_type.code
 
+        # Dimensions required for priority mail class and
+        # all values must be in inches
+        to_uom, = Uom.search([('symbol', '=', 'in')])
+        from_uom, = Uom.search([('symbol', '=', self.distance_unit.symbol)])
+        if (package.length and package.width and package.height):
+            length, width, height = package.length, package.width, package.height
+            if from_uom != to_uom:
+                length = "%.1f" % Uom.compute_qty(
+                    from_uom, package.length, to_uom
+                )
+                width = "%.1f" % Uom.compute_qty(
+                    from_uom, package.width, to_uom
+                )
+                height = "%.1f" % Uom.compute_qty(
+                    from_uom, package.height, to_uom
+                )
+            shipping_label_request.mailpiecedimensions = {
+                'Length': length,
+                'Width': width,
+                'Height': height
+            }
+
         from_address = self._get_ship_from_address()
 
         shipping_label_request.add_data(
