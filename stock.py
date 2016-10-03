@@ -222,7 +222,7 @@ class ShipmentOut:
         # Dimensions required for priority mail class and
         # all values must be in inches
         to_uom, = Uom.search([('symbol', '=', 'in')])
-        from_uom, = Uom.search([('symbol', '=', self.distance_unit.symbol)])
+        from_uom, = Uom.search([('symbol', '=', package.distance_unit.symbol)])
         if (package.length and package.width and package.height):
             length, width, height = package.length, package.width, package.height
             if from_uom != to_uom:
