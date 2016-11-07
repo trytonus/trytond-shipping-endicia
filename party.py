@@ -26,7 +26,11 @@ class Address:
 
         :param return: Returns instance of FromAddress
         '''
-        phone = self.party.phone
+        if hasattr(self, 'phone'):
+            phone = getattr(self, 'phone')
+        else:
+            phone = self.party.phone
+
         if phone:
             # Remove the special characters in the phone if any
             phone = "".join([char for char in phone if char in string.digits])
@@ -50,8 +54,12 @@ class Address:
 
         :param return: Returns instance of ToAddress
         '''
-        phone = self.party.phone
+        if hasattr(self, 'phone'):
+            phone = getattr(self, 'phone')
+        else:
+            phone = self.party.phone
         zip = self.zip
+
         if phone:
             # Remove the special characters in the phone if any
             phone = "".join([char for char in phone if char in string.digits])
