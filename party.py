@@ -26,7 +26,7 @@ class Address:
 
         :param return: Returns instance of FromAddress
         '''
-        if hasattr(self, 'phone'):
+        if getattr(self, 'phone'):
             phone = getattr(self, 'phone')
         else:
             phone = self.party.phone
@@ -54,7 +54,7 @@ class Address:
 
         :param return: Returns instance of ToAddress
         '''
-        if hasattr(self, 'phone'):
+        if getattr(self, 'phone'):
             phone = getattr(self, 'phone')
         else:
             phone = self.party.phone
